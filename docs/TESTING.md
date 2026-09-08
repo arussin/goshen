@@ -1,6 +1,8 @@
 # Compatibility and release verification
 
-The current candidate is **0.3.5**. All **153 automated checks** and package validation pass. Its installed-extension retest remains pending, and the reported Gmail Chat freeze/blank view is unresolved.
+The current candidate is **0.3.5**. All **153 automated checks**, package validation, and the four-job GitHub CI run pass. The installed Chrome build completed the ChatGPT checks below; ordinary-page activation, navigation, and other remaining checks are recorded separately. The reported Gmail Chat freeze/blank view remains unresolved.
+
+For the 2026-09-08 installed check, the unpacked extension folder was reloaded and its runtime reported version **0.3.5**. The release ZIP was verified separately; this was not a fresh installation from that ZIP.
 
 A passed local fixture checks the shared styling runtime. It does not establish that Chrome's installed-extension activation, permissions, or navigation behave correctly. Earlier installed-build results are useful evidence, but do not replace the current release checks below.
 
@@ -18,13 +20,13 @@ Open the [fixture gallery](http://127.0.0.1:4173/preview/sites/index.html) after
 
 For an installed-extension check, load `extension` in Chrome and activate it from its popup. Leave the fixture's **Load local theme** button untouched. Record the extension version, Chrome version, operating system, viewport, selected theme/style, and result. Use fictional data for forms and screenshots.
 
-The configured CI matrix covers Windows and Linux with Node 20 and 22. Confirm the actual workflow results before a release; configuration alone is not a passing run.
+GitHub CI passed for source commit [`8aeac9d`](https://github.com/arussin/goshen/commit/8aeac9d5b1f26dd81673ca25ad895770017d4ebe) on Windows and Linux with Node 20 and 22. All four jobs completed successfully, including tests, validation, packaging, and reproducibility checks. [Workflow results](https://github.com/arussin/goshen/actions/runs/34279097053).
 
 ## Compatibility matrix
 
 | Area | Reproduce and check | Evidence and remaining work |
 | --- | --- | --- |
-| ChatGPT conversation | Open a fresh chat, type and send a harmless prompt, wait for completion, and open native menus. Keep one terminal shell and an editable composer. | A completed response and stable shell passed on an earlier installed build; current 0.3.5 retest pending. Voice, uploads, canvas, and all menus are not covered. |
+| ChatGPT conversation | Open a fresh chat, type and send a harmless prompt, wait for completion, and open native menus. Keep one terminal shell and an editable composer. | Installed 0.3.5 passed on 2026-09-08: a harmless prompt completed in a temporary chat, the native thinking-effort menu opened, one terminal shell remained, the composer stayed editable, and activity returned from working to ready. The terminal settings panel opened and closed; Green phosphor applied and Amber was restored. Voice, uploads, canvas, and all menus are not covered. |
 | Popup controls | Open the popup, inspect status, turn the terminal on, change a setting, then turn it off. | Strict API argument tests pass. Current installed status/enable/disable check pending. |
 | Navigation and isolation | Activate Gallery, navigate to Journal, reload, and open a separate tab. Only the chosen tab should be themed. | Earlier installed checks passed; current release retest pending. |
 | Cross-site following | Enable follow, exercise grant and denial, navigate to a different site, and confirm an unrelated tab stays off. Retry paused access, then turn follow off. | Granted following and isolation passed on an earlier installed build. Current grant/denial/retry checks pending; permission logic has automated coverage. |
@@ -32,7 +34,7 @@ The configured CI matrix covers Windows and Linux with Node 20 and 22. Confirm t
 | Forms and page updates | In Workspace, edit a form, open the native dialog, add a card, rebuild the body, switch styles, and turn the terminal off. Preserve entered text and native controls. | Local checks passed for interaction, dynamic styling, recovery, and removal. |
 | Colors and artwork | In Workspace, inspect the nested opaque card, modern-color panel, artwork caption, and explicit-preservation sample. Toggle the theme off. | Local checks passed: neutral panels theme, captions and explicit samples retain native colors, and OFF restores original values. Current Adobe check pending. |
 | Gallery and article | Inspect SVG artwork, long text, code, links, and horizontal overflow in green and ice themes. | Local visual checks passed; gallery SVG fills stayed unchanged. |
-| HOPPER | Pet, collapse, move, and resize it with pointer and keyboard. Test motion/quips off and reduced motion. Keep every control reachable. | Automated and local geometry checks passed at default, minimum, enlarged, and compact sizes. A small viewport check does not cover every site's mobile layout. |
+| HOPPER | Pet, collapse, move, and resize it with pointer and keyboard. Test motion/quips off and reduced motion. Keep every control reachable. | On installed 0.3.5 in ChatGPT, a headpat changed the rabbit art and quip, and nine lamp elements had active CSS animations. Automated and local geometry checks passed at default, minimum, enlarged, and compact sizes; current installed universal movement/resizing remains pending. A small viewport check does not cover every site's mobile layout. |
 | Gmail and embedded Chat | Inspect inbox hierarchy and ordinary controls, then use embedded Chat with the terminal on and off. | Earlier bounded style/container checks passed. Embedded Chat responsiveness and the freeze/blank-view report remain unresolved. No claim that all Gmail lag is fixed. |
 | Unsupported pages | Try a Chrome internal page and a protected store page. Expect a clear unsupported state and no injection. | Policy tests pass. Closed shadow roots, cross-origin frames, canvas, and embedded media may remain native. |
 | Performance | Run **Slow-load check**, then add 500 fictional mail rows while typing and interacting with HOPPER. Check that the page responds and OFF cleans up. | Local runtime checks passed; current installed startup and real-site performance remain unverified. |
@@ -58,10 +60,12 @@ The fictional mail benchmark previously themed 504 rows and 6,003 icon paths in 
 ## Current release gates
 
 - [x] Run the complete automated suite and package validation for 0.3.5: 153 passed, no failures or skips; 17 extension files validated.
-- [ ] Install the exact 0.3.5 distributable in Chrome and complete the popup, ChatGPT, navigation, and cached-page checks above.
+- [x] Verify the reloaded unpacked 0.3.5 runtime on ChatGPT: completed response, working-to-ready activity, editable composer, native menu, and one stable terminal shell.
+- [ ] Complete ordinary-page popup controls, navigation, and cached-page checks on the installed 0.3.5 candidate.
 - [ ] Verify optional permission denial/retry, tab closure cleanup, and isolation on the installed candidate.
 - [ ] Recheck Adobe's neutral panels and current installed startup behavior.
-- [ ] Resolve or explicitly retain the Gmail Chat limitation in the release description; do not advertise it as verified.
-- [ ] Confirm the release commit's CI results and that its screenshots, privacy disclosures, and compatibility claims match the candidate.
+- [x] Explicitly retain the unresolved Gmail Chat limitation in the saved release description; do not advertise it as verified.
+- [x] Confirm the release source commit's four-job CI run passed.
+- [ ] Confirm the final screenshots, privacy disclosures, and compatibility claims match the candidate and recorded test results.
 
 A Web Store listing must not imply broader compatibility than this evidence supports. For conflicts, **FRAME ONLY** and **TERMINAL OFF** remain the user-facing fallback. See the [Web Store release guide](WEB-STORE.md) for listing preparation, [CONTRIBUTING.md](../CONTRIBUTING.md) for packaging, and [PRIVACY.md](../PRIVACY.md) for access and storage disclosures.

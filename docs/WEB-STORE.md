@@ -2,6 +2,8 @@
 
 This guide prepares **Goshen Terminal 0.3.5** for a first store release. It includes draft listing copy and the maintainer's upload checklist. A prepared ZIP or completed checklist does not mean Google has reviewed or approved the extension.
 
+**Status recorded 2026-09-08:** The 0.3.5 source and privacy policy are publicly available, GitHub CI passed, and private vulnerability reporting is enabled. The Chrome Web Store draft contains the 0.3.5 package, listing images, privacy declarations, and reviewer instructions, with Unlisted distribution selected. It has not been submitted for review or published. Installed-browser verification is partially complete; see [TESTING.md](TESTING.md).
+
 The recommended first release is **Unlisted**, using one store item and a small group of testers. Anyone with an unlisted item's link can install it; choose **Private** if installation must be restricted to named testers. All visibility choices undergo the same policy review. [Distribution options](https://developer.chrome.com/docs/webstore/cws-dashboard-distribution).
 
 ## 1. Finish the release checks

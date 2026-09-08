@@ -17,7 +17,7 @@ Public page address or small HTML fixture, then exact steps:
 
 **Expected and actual behavior**
 
-**Does EXIT GOSHEN MODE or FRAME ONLY restore the page?**
+**Does TERMINAL OFF restore the page, or does FRAME ONLY avoid the problem?**
 
 **Optional screenshot**
 Remove private messages, account details, credentials, and personal URLs first.
