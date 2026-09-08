@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" data-cd-preview="true">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Goshen Terminal — Phosphor interface / local preview</title>
+  <link rel="icon" href="../extension/icons/icon-48.png">
+  <link rel="stylesheet" href="preview.css"><link rel="stylesheet" href="../extension/content.css">
+  <script src="../extension/settings.js" defer></script>
+  <script src="../extension/companion.js" defer></script>
+  <script src="../extension/content.js" defer></script>
+  <script src="preview.js" defer></script>
+</head>
+<body>
+  <div id="app">
+    <aside id="history" aria-label="Chat history">
+      <div class="archive-heading"><span>02</span> SESSION ARCHIVE <span class="archive-count">06</span></div>
+      <div class="sidebar-inner">
+        <button id="new-chat" class="new-chat"><span>＋</span> NEW TRANSMISSION <kbd>N</kbd></button>
+        <label class="search-label"><span aria-hidden="true">⌕</span><input id="search-history" type="search" placeholder="Find a session…" aria-label="Find a session"><kbd>/</kbd></label>
+        <p class="group-label">CURRENT FREQUENCY</p>
+        <nav class="history-links" aria-label="Sample sessions">
+          <a href="#session=welcome" data-session="welcome" aria-current="page"><span class="session-glyph">▤</span> A terminal for the curious <span class="active-mark">●</span></a>
+          <a href="#session=world" data-session="world"><span class="session-glyph">▤</span> Worldbuilding after midnight</a>
+          <a href="#session=code" data-session="code"><span class="session-glyph">▤</span> A tiny generative universe</a>
+          <span class="group-label">EARLIER TRANSMISSIONS</span>
+          <a href="#session=music" data-session="music"><span class="session-glyph">▤</span> Music for deep space</a>
+          <a href="#session=notes" data-session="notes"><span class="session-glyph">▤</span> Notes from the analog world</a>
+          <a href="#session=ideas" data-session="ideas"><span class="session-glyph">▤</span> The next good idea</a>
+        </nav>
+        <div class="no-results" hidden>No matching sessions.</div>
+      </div>
+      <div class="sidebar-bottom">
+        <pre class="deck-mark" aria-hidden="true">┌──────────────────────┐
+│  G T / 0 1   ▰ ▰ ▰   │
+│  PERSONAL  TERMINAL  │
+└──────────────────────┘</pre>
+        <div class="hardware-edition">DESIGNED FOR THE HUMAN AT THE KEYS.</div>
+        <div class="local-profile"><span class="profile-symbol">A_</span><div>Operator<span>DEMO CONTENT</span></div><button id="help-button" aria-label="Installation instructions">?</button></div>
+      </div>
+    </aside>
+    <main id="main" aria-label="Conversation">
+      <header class="native-header"><button id="model-info" class="model-selector">ChatGPT <span>⌄</span></button><div class="native-header-right"><span class="preview-tag">DEMO CONTENT</span><button id="demo-cycle" title="Simulate an incoming response" aria-label="Simulate response">▷ <span>DEMO RESPONSE</span></button></div></header>
+      <div class="conversation" id="conversation" aria-label="Messages"></div>
+      <div class="composer-area">
+        <form id="composer-form" aria-label="Message composer">
+          <div class="composer-label"><span>INPUT /</span><span>YOUR NEXT GOOD IDEA STARTS HERE</span></div>
+          <textarea id="prompt-textarea" rows="2" placeholder="Send a transmission…" aria-label="Message"></textarea>
+          <div class="composer-actions"><span class="composer-hint">↵ SEND <span>·</span> SHIFT + ↵ NEW LINE</span><button id="send-button" data-testid="send-button" type="submit" aria-label="Send prompt">TRANSMIT <span>↗</span></button></div>
+        </form>
+        <p class="preview-note">Interactive skin preview. Responses are simulated. <a href="../README.md" id="install-link">INSTALL THE EXTENSION ↗</a></p>
+      </div>
+    </main>
+  </div>
+  <dialog id="help-dialog"><button class="help-close" aria-label="Close instructions">×</button><span class="help-overline">TERMINAL / GT—01</span><h2>Your browser.<br>A different frequency.</h2><p>This preview runs the actual skin on a local sample conversation. It does not connect to ChatGPT.</p><ol><li>Open <strong>chrome://extensions</strong> in Chrome.</li><li>Turn on <strong>Developer mode</strong>.</li><li>Choose <strong>Load unpacked</strong> and select the project's <strong>extension</strong> folder.</li><li>Refresh <strong>chatgpt.com</strong>. Use <strong>Tune terminal</strong> to make it yours.</li></ol><p class="help-small">A personal extension. Not affiliated with OpenAI.<br>Appearance settings stay on this device.</p><button class="help-done">BACK TO THE DECK ↗</button></dialog>
+  <button id="restore-deck" hidden>RESTORE TERMINAL</button>
+</body>
+</html>

@@ -1,0 +1,61 @@
+/* Goshen anywhere: appearance only. Native layout and media stay with the site. */
+@media screen {
+html[data-gt-universal="true"] {
+  --gt-bg:#10120f; --gt-panel:#191c16; --gt-raised:#23271e;
+  --gt-ink:#e2dfcc; --gt-muted:#a4aa92; --gt-phosphor:#efb866; --gt-line:#535940;
+  --gt-font:"Cascadia Code","Consolas","Liberation Mono",monospace;
+}
+html[data-gt-universal="true"][data-gt-theme="green"] { --gt-phosphor:#9ed79d; --gt-line:#45604a; }
+html[data-gt-universal="true"][data-gt-theme="ice"] { --gt-phosphor:#94d5e5; --gt-line:#415c65; }
+html[data-gt-universal="true"][data-gt-style="terminal"] { color-scheme:dark; background-color:var(--gt-bg) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"] [data-gt-surface="base"] { background-color:var(--gt-bg) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"] [data-gt-surface="panel"] { background-color:var(--gt-panel) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"] [data-gt-surface="raised"] { background-color:var(--gt-raised) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"] [data-gt-foreground="text"] { color:var(--gt-ink) !important; caret-color:var(--gt-phosphor) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"] [data-gt-foreground="link"] { color:var(--gt-phosphor) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"] [data-gt-foreground="link"]:hover { text-decoration:underline; }
+html[data-gt-universal="true"][data-gt-style="terminal"] [data-gt-font] { font-family:var(--gt-font) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"] [data-gt-font="body"] { font-size:var(--gt-font-size,15px) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"] [data-gt-border="true"] { border-color:var(--gt-line) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"] [data-gt-foreground]::selection { background:var(--gt-phosphor); color:var(--gt-bg); }
+html[data-gt-universal="true"][data-gt-style="terminal"] :is(input,textarea)[data-gt-foreground]::placeholder { color:var(--gt-muted) !important; opacity:1; }
+/* Text over artwork and semantic regions retains its native inherited ink.
+   An opaque neutral child panel can establish its own terminal surface. */
+html[data-gt-universal="true"][data-gt-style="terminal"] [data-gt-image-region="true"] { color:var(--gt-preserved-ink,inherit) !important; }
+
+/* Gmail's native roles/classes keep surface hierarchy and selection changes.
+   The profile is set only by its exact-host adapter. Media and mail bodies are
+   never targeted here; small control glyphs must pass the adapter's paint check. */
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] {
+  --gt-gmail-inbox:#141811; --gt-gmail-read:#1b2118; --gt-gmail-unread:#293022;
+  --gt-gmail-read-ink:#bdc4ad;
+  --gt-gmail-selected:#463d27; --gt-gmail-hover:#302c1e;
+}
+@supports (color:color-mix(in srgb,white,black)) {
+  html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] {
+    --gt-gmail-selected:color-mix(in srgb,var(--gt-phosphor) 21%,var(--gt-panel));
+    --gt-gmail-hover:color-mix(in srgb,var(--gt-phosphor) 10%,var(--gt-panel));
+  }
+}
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="navigation"],
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="nav-row"] { background-color:var(--gt-panel) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="search"],
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="card"] { background-color:var(--gt-raised) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="search"] { outline:1px solid var(--gt-line); outline-offset:-1px; }
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="main"],
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="inbox"] { background-color:var(--gt-gmail-inbox) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="row"] { background-color:var(--gt-gmail-unread) !important; color:var(--gt-ink) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="row"].yO { background-color:var(--gt-gmail-read) !important; color:var(--gt-gmail-read-ink) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="row"].yO [data-gt-foreground="text"] { color:var(--gt-gmail-read-ink) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="row"].zE { background-color:var(--gt-gmail-unread) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="row"]:hover,
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="nav-row"]:hover { background-color:var(--gt-gmail-hover) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="row"].x7,
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="row"][aria-selected="true"],
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-gmail-region="nav-row"].nZ { background-color:var(--gt-gmail-selected) !important; color:var(--gt-ink) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-icon-fill="true"] { fill:var(--gt-ink) !important; }
+html[data-gt-universal="true"][data-gt-style="terminal"][data-gt-profile="gmail"] [data-gt-icon-stroke="true"] { stroke:var(--gt-ink) !important; }
+}
+@media print {
+  #goshen-universal-host { display:none !important; }
+}

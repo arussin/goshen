@@ -1,0 +1,25 @@
+{
+  "name": "goshen-terminal",
+  "version": "0.3.5",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arussin/goshen.git"
+  },
+  "homepage": "https://github.com/arussin/goshen#readme",
+  "bugs": {
+    "url": "https://github.com/arussin/goshen/issues"
+  },
+  "description": "A local phosphor terminal for ChatGPT and the browser tabs you choose.",
+  "scripts": {
+    "preview": "node scripts/serve.mjs",
+    "test": "node --test",
+    "validate": "node scripts/validate.mjs",
+    "icons": "node scripts/generate-icons.mjs",
+    "package": "node scripts/package.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

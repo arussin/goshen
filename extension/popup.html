@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en" data-theme="amber">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Tune Goshen Terminal</title>
+  <link rel="stylesheet" href="popup.css">
+  <script src="settings.js" defer></script>
+  <script src="popup.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand"><span class="brand-icon" aria-hidden="true">G<span>▰</span></span><div><h1>GOSHEN TERMINAL</h1><p>PHOSPHOR INTERFACE</p></div></div>
+    <span class="model">GT—01</span>
+  </header>
+  <main>
+    <section class="page-panel" aria-labelledby="page-label" aria-busy="true">
+      <div class="section-label"><h2 id="page-label">CURRENT TAB</h2><span id="page-mode">CONNECTING</span></div>
+      <div class="page-heading"><strong id="page-host">Checking this page…</strong><span id="page-state" role="status" aria-live="polite">CHECKING</span></div>
+      <button id="page-toggle" class="page-toggle" type="button" disabled>CHECKING PAGE…</button>
+      <p id="page-hint" class="hint">Connecting to the active browser tab.</p>
+      <div class="tab-follow" id="tab-follow">
+        <label class="toggle-label" for="follow-tab"><span><strong>Follow this tab across sites</strong><small id="follow-hint">Stays on this site after navigation and reloads.</small></span><span class="switch"><input id="follow-tab" type="checkbox" disabled><span class="switch-track" aria-hidden="true"></span></span></label>
+        <p class="permission-hint">Optional: Chrome will ask for website access. Only tabs you enable will follow you.</p>
+        <button id="follow-access" type="button" hidden>ALLOW WEBSITE ACCESS</button>
+        <button id="page-forget" type="button" hidden>TERMINAL OFF</button>
+      </div>
+      <div class="page-error" id="page-error" role="alert" hidden><p id="page-error-message"></p><button id="page-retry" type="button">CHECK AGAIN</button></div>
+    </section>
+    <div class="section-label preferences-label"><span>APPEARANCE</span><span>SHARED PREFERENCES</span></div>
+    <form id="controls" aria-label="Terminal preferences">
+      <fieldset id="preferences" disabled>
+        <div class="power-panel">
+          <label class="toggle-label" for="enabled"><span><strong>Automatic on ChatGPT</strong><small>Start the terminal when you open ChatGPT.</small></span><span class="switch"><input type="checkbox" id="enabled" name="enabled" checked><span class="switch-track" aria-hidden="true"></span></span></label>
+        </div>
+        <section class="control-section" aria-labelledby="phosphor-label">
+          <h2 id="phosphor-label"><span>01</span> PHOSPHOR</h2>
+          <div class="theme-options" role="group" aria-label="Phosphor color">
+            <button class="theme-choice" type="button" data-theme="amber" aria-pressed="true"><span class="swatch amber" aria-hidden="true"></span>AMBER</button>
+            <button class="theme-choice" type="button" data-theme="green" aria-pressed="false"><span class="swatch green" aria-hidden="true"></span>GREEN</button>
+            <button class="theme-choice" type="button" data-theme="ice" aria-pressed="false"><span class="swatch ice" aria-hidden="true"></span>ICE</button>
+          </div>
+        </section>
+        <section class="control-section" id="universal-style-section" aria-labelledby="universal-style-label">
+          <h2 id="universal-style-label"><span>02</span> WEBSITE STYLE</h2>
+          <div class="segmented" role="group" aria-label="Website style">
+            <button type="button" data-universal-style="terminal" aria-pressed="true">TERMINAL COLORS</button>
+            <button type="button" data-universal-style="frame" aria-pressed="false">FRAME ONLY</button>
+          </div>
+          <p class="hint">Frame only keeps the website’s own colors and fonts.</p>
+        </section>
+        <section class="control-section" id="chatgpt-layout-section" aria-labelledby="workspace-label">
+          <h2 id="workspace-label"><span>02</span> CHATGPT LAYOUT</h2>
+          <div class="segmented" role="group" aria-label="ChatGPT layout">
+            <button type="button" data-layout="deck" aria-pressed="true"><span aria-hidden="true">▥</span> FULL DECK</button>
+            <button type="button" data-layout="focus" aria-pressed="false"><span aria-hidden="true">▣</span> FOCUS</button>
+          </div>
+          <p class="hint">Focus tucks away the instrument rail.</p>
+        </section>
+        <section class="control-section tuning" aria-labelledby="display-label">
+          <h2 id="display-label"><span>03</span> DISPLAY TUNING</h2>
+          <div class="range-control"><label for="scanlines">Scanlines <output for="scanlines" id="scanlines-value">18%</output></label><input id="scanlines" name="scanlines" type="range" min="0" max="40" step="1" value="18"></div>
+          <div class="range-control"><label for="glow">Phosphor glow <output for="glow" id="glow-value">35%</output></label><input id="glow" name="glow" type="range" min="0" max="60" step="1" value="35"></div>
+          <div class="range-control"><label for="fontSize">Type size <output for="fontSize" id="fontSize-value">15 px</output></label><input id="fontSize" name="fontSize" type="range" min="13" max="20" step="1" value="15"></div>
+          <label class="toggle-label motion" for="motion"><span><strong>Ambient animation</strong><small>Rabbit, light panels &amp; cursor pulse</small></span><span class="switch"><input type="checkbox" id="motion" name="motion" checked><span class="switch-track" aria-hidden="true"></span></span></label>
+          <label class="toggle-label companion" for="quips"><span><strong>Rabbit quips</strong><small>Occasional remarks from your terminal companion</small></span><span class="switch"><input type="checkbox" id="quips" name="quips" checked><span class="switch-track" aria-hidden="true"></span></span></label>
+          <label class="toggle-label companion" for="respectReducedMotion"><span><strong>Follow system reduced motion</strong><small>Applies system preference to theme animations</small></span><span class="switch"><input type="checkbox" id="respectReducedMotion" name="respectReducedMotion"><span class="switch-track" aria-hidden="true"></span></span></label>
+        </section>
+        <div class="settings-bottom"><span id="save-status" role="status" aria-live="polite">LOADING PREFERENCES</span><button type="button" id="reset">RESET</button></div>
+      </fieldset>
+    </form>
+    <div class="error" id="error" role="alert" hidden><p id="error-message"></p><button id="retry" type="button">TRY AGAIN</button></div>
+  </main>
+  <footer><span class="status-dot" aria-hidden="true"></span> LOCAL ONLY <span class="footer-right">YOUR WEB / YOUR TERMINAL</span></footer>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Goshen Terminal",
+  "short_name": "Goshen Terminal",
+  "version": "0.3.5",
+  "minimum_chrome_version": "106",
+  "description": "A phosphor terminal for the web. Activate on your chosen tab, with a reactive pixel rabbit and tailored ChatGPT support.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "Tune Goshen Terminal",
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" }
+  },
+  "icons": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
+  "content_scripts": [{
+    "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+    "css": ["content.css"],
+    "js": ["settings.js", "companion.js", "content.js"],
+    "run_at": "document_idle"
+  }],
+  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'none'" }
+}
