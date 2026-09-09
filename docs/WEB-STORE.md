@@ -2,7 +2,7 @@
 
 This guide prepares **Goshen Terminal 0.3.5** for a first store release. It includes draft listing copy and the maintainer's upload checklist. A prepared ZIP or completed checklist does not mean Google has reviewed or approved the extension.
 
-**Status recorded 2026-09-08:** The 0.3.5 source and privacy policy are publicly available, GitHub CI passed, and private vulnerability reporting is enabled. The Chrome Web Store draft contains the 0.3.5 package, listing images, privacy declarations, and reviewer instructions, with Unlisted distribution selected. It has not been submitted for review or published. Installed-browser verification is partially complete; see [TESTING.md](TESTING.md).
+**Status recorded 2026-09-08:** The 0.3.5 source and privacy policy are publicly available, GitHub CI passed, and private vulnerability reporting is enabled. The Chrome Web Store draft contains the 0.3.5 package, listing images, privacy declarations, and reviewer instructions, with Unlisted distribution selected. Core installed-browser checks for the first unlisted preview have passed, including ChatGPT, ordinary-page activation, navigation, cached-page reactivation, OFF, HOPPER, and controlled delayed startup. The draft is awaiting explicit publisher approval to submit for review; it has not been submitted or published. Deferred publication has not yet been selected in the submission dialog. Remaining compatibility and permission-path limitations are recorded in [TESTING.md](TESTING.md).
 
 The recommended first release is **Unlisted**, using one store item and a small group of testers. Anyone with an unlisted item's link can install it; choose **Private** if installation must be restricted to named testers. All visibility choices undergo the same policy review. [Distribution options](https://developer.chrome.com/docs/webstore/cws-dashboard-distribution).
 
@@ -16,7 +16,7 @@ Before submitting the candidate, record results against the exact installed vers
 - Reproduce and resolve the Gmail Chat freeze/blank-view report before claiming support for that view. Keep the limitation in the listing while unresolved; local fictional inbox checks do not establish embedded Chat compatibility.
 - Check the latest color and startup changes on representative real pages. Record remaining limitations without presenting fixture timings as installed-browser performance.
 
-Fresh installed-browser verification of the 0.3.5 candidate is a release gate. The current compatibility matrix records the outstanding live checks; preparing this guide does not close them.
+Fresh installed-browser verification of the 0.3.5 candidate is a release gate. Its core smoke checks are complete; the current compatibility matrix distinguishes these results from the remaining permission-path and broader compatibility checks. Retain those limitations in the preview's release claims.
 
 Run `npm test`, `npm run validate`, and `npm run package` against the release source. Package again to verify reproducibility. The candidate archive is `dist/Goshen-Terminal-0.3.5.zip`, with `manifest.json` at its root. It should contain only the extension files and the root license, plus a notice if one is added. Tests, previews, documentation, and old archives belong outside the installed package.
 

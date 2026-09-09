@@ -1,8 +1,10 @@
 # Compatibility and release verification
 
-The current candidate is **0.3.5**. All **153 automated checks**, package validation, and the four-job GitHub CI run pass. The installed Chrome build completed the ChatGPT checks below; ordinary-page activation, navigation, and other remaining checks are recorded separately. The reported Gmail Chat freeze/blank view remains unresolved.
+The current candidate is **0.3.5**. All **153 automated checks**, package validation, and the four-job GitHub CI run pass. The installed Chrome build completed the ChatGPT checks and the ordinary-page activation, navigation, cached-page reactivation, form, color, and HOPPER checks below. Remaining checks are recorded separately. The reported Gmail Chat freeze/blank view remains unresolved.
 
 For the 2026-09-08 installed check, the unpacked extension folder was reloaded and its runtime reported version **0.3.5**. The release ZIP was verified separately; this was not a fresh installation from that ZIP.
+
+The ordinary-page checks used the popup to activate the installed extension on fictional fixtures. The fixture's local theme loader was not used: the page exposed only its own `sites.css` and `sites.js` assets, without the local demo runtime. Form checks used fictional text.
 
 A passed local fixture checks the shared styling runtime. It does not establish that Chrome's installed-extension activation, permissions, or navigation behave correctly. Earlier installed-build results are useful evidence, but do not replace the current release checks below.
 
@@ -22,22 +24,24 @@ For an installed-extension check, load `extension` in Chrome and activate it fro
 
 GitHub CI passed for source commit [`8aeac9d`](https://github.com/arussin/goshen/commit/8aeac9d5b1f26dd81673ca25ad895770017d4ebe) on Windows and Linux with Node 20 and 22. All four jobs completed successfully, including tests, validation, packaging, and reproducibility checks. [Workflow results](https://github.com/arussin/goshen/actions/runs/34279097053).
 
+The same four jobs also passed for the documentation-only follow-up [`e14dc399`](https://github.com/arussin/goshen/commit/e14dc3990a60cb96b7333b1a8cd13c7e58bbd74b). [Follow-up workflow results](https://github.com/arussin/goshen/actions/runs/34281984290). The preserved 0.3.5 installable and source ZIPs still match their recorded SHA-256 sums; the source ZIP is the original `8aeac9d` snapshot and does not include later testing-note updates.
+
 ## Compatibility matrix
 
 | Area | Reproduce and check | Evidence and remaining work |
 | --- | --- | --- |
 | ChatGPT conversation | Open a fresh chat, type and send a harmless prompt, wait for completion, and open native menus. Keep one terminal shell and an editable composer. | Installed 0.3.5 passed on 2026-09-08: a harmless prompt completed in a temporary chat, the native thinking-effort menu opened, one terminal shell remained, the composer stayed editable, and activity returned from working to ready. The terminal settings panel opened and closed; Green phosphor applied and Amber was restored. Voice, uploads, canvas, and all menus are not covered. |
-| Popup controls | Open the popup, inspect status, turn the terminal on, change a setting, then turn it off. | Strict API argument tests pass. Current installed status/enable/disable check pending. |
-| Navigation and isolation | Activate Gallery, navigate to Journal, reload, and open a separate tab. Only the chosen tab should be themed. | Earlier installed checks passed; current release retest pending. |
-| Cross-site following | Enable follow, exercise grant and denial, navigate to a different site, and confirm an unrelated tab stays off. Retry paused access, then turn follow off. | Granted following and isolation passed on an earlier installed build. Current grant/denial/retry checks pending; permission logic has automated coverage. |
-| OFF and history | Turn a page off, navigate away, and return through Back/reload. It should stay off. Then turn the terminal on for another page in that tab and return to the cached page; both dock and colors should recover. | OFF through history passed earlier. The missing-stylesheet regression has automated coverage; current installed cached-page restoration is pending. |
-| Forms and page updates | In Workspace, edit a form, open the native dialog, add a card, rebuild the body, switch styles, and turn the terminal off. Preserve entered text and native controls. | Local checks passed for interaction, dynamic styling, recovery, and removal. |
-| Colors and artwork | In Workspace, inspect the nested opaque card, modern-color panel, artwork caption, and explicit-preservation sample. Toggle the theme off. | Local checks passed: neutral panels theme, captions and explicit samples retain native colors, and OFF restores original values. Current Adobe check pending. |
+| Popup controls | Open the popup, inspect status, turn the terminal on, change a setting, then turn it off. | Installed 0.3.5 activation through the popup passed; the in-page OFF control removed the theme. This does not cover every popup setting or status transition. Strict API argument tests pass. |
+| Navigation and isolation | Activate Gallery, navigate to Workspace, reload, and open a separate tab. Only the chosen tab should be themed. | Installed 0.3.5 passed: same-site navigation and reload retained the terminal with one host; a separate fixture tab remained unthemed. |
+| Cross-site following | Enable follow, exercise grant and denial, navigate to a different site, and confirm an unrelated tab stays off. Retry paused access, then turn follow off. | Installed 0.3.5 followed the chosen tab to a public GitHub page while a separate fixture tab stayed off. Return through Back restored the cached Workspace with its theme and form values. A fresh permission prompt, denial/retry, and turning follow off remain unverified on this candidate; permission logic has automated coverage. |
+| OFF and history | Turn a page off, navigate away, and return through Back/reload. It should stay off. Then turn the terminal on for another page in that tab and return to the cached page; both dock and colors should recover. | Installed 0.3.5 passed OFF → navigate to Journal → Back to cached Workspace: the page stayed off and retained form values. Ordinary cached ON restoration also passed. Turning ON in Journal and going Back to the formerly OFF cached Workspace restored one terminal host, dark body/panel colors, and both entered form values. The fixture confirmed cached restoration; this also covers the missing-stylesheet regression. A subsequent OFF survived cached Back and a fresh reload, leaving no terminal host and the native body appearance. |
+| Forms and page updates | In Workspace, edit a form, open the native dialog, add a card, rebuild the body, switch styles, and turn the terminal off. Preserve entered text and native controls. | Installed 0.3.5 passed name/note editing, native dialog opening and cancellation, and styling a dynamically added card. Entered text survived page updates, cached history restoration, and OFF. Body replacement and style switching have local coverage but were not repeated in this installed check. |
+| Colors and artwork | In Workspace, inspect the nested opaque card, modern-color panel, artwork caption, and explicit-preservation sample. Toggle the theme off. | Installed 0.3.5 darkened the opaque white and modern-color panels, kept the explicit-preservation paper sample unchanged, and restored native panels on OFF. Local checks also cover captions and artwork. Current Adobe check pending. |
 | Gallery and article | Inspect SVG artwork, long text, code, links, and horizontal overflow in green and ice themes. | Local visual checks passed; gallery SVG fills stayed unchanged. |
-| HOPPER | Pet, collapse, move, and resize it with pointer and keyboard. Test motion/quips off and reduced motion. Keep every control reachable. | On installed 0.3.5 in ChatGPT, a headpat changed the rabbit art and quip, and nine lamp elements had active CSS animations. Automated and local geometry checks passed at default, minimum, enlarged, and compact sizes; current installed universal movement/resizing remains pending. A small viewport check does not cover every site's mobile layout. |
+| HOPPER | Pet, collapse, move, and resize it with pointer and keyboard. Test motion/quips off and reduced motion. Keep every control reachable. | Installed 0.3.5 passed headpat reactions, a 40px keyboard move, and a pointer drag of 250px horizontally and 120px vertically. The universal dock had no dock/body scroll overflow at minimum 220×280, default 260×340, and enlarged 360×380 sizes. Collapse to 44px kept OFF reachable; default geometry was restored. On ChatGPT, a headpat changed the rabbit art and quip, and nine lamp elements had active CSS animations. Motion/quips-off and reduced-motion behavior retain automated/local coverage but were not repeated here; these sizes do not establish every site's mobile compatibility. |
 | Gmail and embedded Chat | Inspect inbox hierarchy and ordinary controls, then use embedded Chat with the terminal on and off. | Earlier bounded style/container checks passed. Embedded Chat responsiveness and the freeze/blank-view report remain unresolved. No claim that all Gmail lag is fixed. |
 | Unsupported pages | Try a Chrome internal page and a protected store page. Expect a clear unsupported state and no injection. | Policy tests pass. Closed shadow roots, cross-origin frames, canvas, and embedded media may remain native. |
-| Performance | Run **Slow-load check**, then add 500 fictional mail rows while typing and interacting with HOPPER. Check that the page responds and OFF cleans up. | Local runtime checks passed; current installed startup and real-site performance remain unverified. |
+| Performance | Run **Slow-load check** and **Slow-DOM check**, then add 500 fictional mail rows while typing and interacting with HOPPER. Check that the page responds and OFF cleans up. | Installed 0.3.5 activated on the delayed-DOM fixture 166ms after the document became interactive, before its delayed image finished loading; one terminal host remained and no local demo style was injected. See the measurements below. The earlier local mail benchmark has not been repeated on this installed candidate; real-site performance remains unverified. |
 
 ## Automated regression coverage
 
@@ -55,17 +59,24 @@ GitHub CI passed for source commit [`8aeac9d`](https://github.com/arussin/goshen
 
 A brief native or white/light background during loading is expected. Goshen waits for a document it can inspect and style; the theme is not guaranteed to appear before the browser's first paint.
 
+In one controlled installed 0.3.5 **Slow-DOM check** on 2026-09-08, the fixture recorded document interactive and DOM readiness at 2,466ms, the terminal at 2,632ms, and full load at 8,120ms. Activation therefore followed interactive by 166ms and did not wait for the roughly eight-second delayed image. The page had one terminal host and no local demo style. This is a single delayed-fixture measurement, not a first-paint guarantee or a real Gmail benchmark.
+
 The fictional mail benchmark previously themed 504 rows and 6,003 icon paths in 796ms, sampled every 250ms, while typing remained usable. It recorded a 3.2ms maximum scan slice, 25ms maximum additional UI-heartbeat delay, and no scanner errors. These are one local Chromium run's measurements, not performance guarantees or proof about an actual inbox. Re-run the fixture on the release candidate rather than treating those numbers as a threshold.
 
 ## Current release gates
 
 - [x] Run the complete automated suite and package validation for 0.3.5: 153 passed, no failures or skips; 17 extension files validated.
 - [x] Verify the reloaded unpacked 0.3.5 runtime on ChatGPT: completed response, working-to-ready activity, editable composer, native menu, and one stable terminal shell.
-- [ ] Complete ordinary-page popup controls, navigation, and cached-page checks on the installed 0.3.5 candidate.
-- [ ] Verify optional permission denial/retry, tab closure cleanup, and isolation on the installed candidate.
-- [ ] Recheck Adobe's neutral panels and current installed startup behavior.
+- [x] Verify installed ordinary-page popup activation, same-site navigation/reload, cross-site following, separate-tab isolation, forms, color restoration, and HOPPER geometry.
+- [x] Verify cached ON restoration and OFF persistence through navigation and Back with form values preserved; verify subsequent OFF also survives a fresh reload.
+- [x] Complete ON-on-B → Back-to-cached-OFF-A reactivation on installed 0.3.5; both the dock and colors recovered, with form values preserved.
+- [ ] Verify optional permission denial/retry and tab closure cleanup on the installed candidate.
+- [x] Measure installed startup on the controlled delayed-DOM fixture; activation preceded completion of the delayed image.
+- [ ] Recheck Adobe's neutral panels and repeat the mail interaction benchmark on the installed candidate.
 - [x] Explicitly retain the unresolved Gmail Chat limitation in the saved release description; do not advertise it as verified.
 - [x] Confirm the release source commit's four-job CI run passed.
-- [ ] Confirm the final screenshots, privacy disclosures, and compatibility claims match the candidate and recorded test results.
+- [x] Confirm the final screenshots, privacy disclosures, and compatibility claims match the candidate and recorded test results.
 
 A Web Store listing must not imply broader compatibility than this evidence supports. For conflicts, **FRAME ONLY** and **TERMINAL OFF** remain the user-facing fallback. See the [Web Store release guide](WEB-STORE.md) for listing preparation, [CONTRIBUTING.md](../CONTRIBUTING.md) for packaging, and [PRIVACY.md](../PRIVACY.md) for access and storage disclosures.
+
+The core installed smoke checks for an initial unlisted preview have passed. The preview can explicitly retain the unresolved Gmail Chat report, unverified Adobe panels, brief native first paint, and native rendering in protected or embedded content. It must not claim that these cases, the pending permission paths, or all ChatGPT features have passed. A reproducible failure of activation, OFF, or cached-page reactivation on an otherwise working ordinary page should be fixed before submission.
