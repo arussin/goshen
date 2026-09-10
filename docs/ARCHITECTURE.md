@@ -10,7 +10,7 @@ Goshen Terminal is a dependency-free Chrome Manifest V3 extension. It has two ad
 | `extension/background.js` | User-requested tab activation/removal, session intent, navigation recovery, and local asset injection |
 | `extension/sites.js` | Shared site classification and supported-page policy, imported locally by the worker |
 | `extension/settings.js` | Defaults, normalization, local persistence, and change subscriptions |
-| `extension/companion.js` | Bounded HOPPER sprite frames and prewritten dialogue from activity/category inputs |
+| `extension/companion.js` | Bounded HOPPER sprite frames and prewritten dialogue from non-content activity events |
 | `extension/content.js`, `content.css` | Dedicated ChatGPT adapter, shell, native element marks, and loading indicators |
 | `extension/universal.js`, `universal.css` | Conservative generic page treatment, terminal/frame styles, and event-driven companion |
 | `extension/gmail.js` | Gmail-only structural/color helper for surface hierarchy and small monochrome control glyphs |
@@ -34,6 +34,8 @@ Optional cross-site following declares exactly `http://*/*` and `https://*/*`. T
 
 The popup sends explicit follow intent to the worker before opening Chrome's permission prompt, without waiting for the permission result to persist that intent. Chrome may close the popup during the prompt. A denied or unavailable grant can therefore leave the selected follow choice paused; the popup exposes **ALLOW WEBSITE ACCESS** for a new user-initiated request. A permission-added event resumes only existing selected tab intents through the ordinary permission checks. Late prompt results never recreate an intent cleared by OFF. This flow uses the existing origin and follow boolean without adding stored fields.
 
+The popup also exposes **REMOVE CROSS-SITE ACCESS**. This global action clears follow flags and invalidates pending operations before removing optional host grants. It enumerates actual grants, including narrower site patterns, and verifies that none remain outside the two required ChatGPT scopes. It unregisters obsolete dynamic content scripts. A session-only `goshen.cross-site-access-revoked` boolean prevents delayed grants from restoring cross-site access after explicit removal; a new user Follow choice clears it. Removing optional access does not remove the declarative ChatGPT scope or necessarily remove already rendered themes.
+
 ## Settings and state
 
 `globalThis.CyberdeckSettings` remains the shared classic-script API for compatibility with earlier releases. It exposes `defaults`, `normalize`, asynchronous `load`/`save`, and `subscribe`. The `cyberdeck.settings` key remains unchanged. Only supported fields and bounded values are persisted in Chrome's local extension storage.
@@ -54,7 +56,7 @@ Page-local state includes observer targets, extension-owned nodes, timer handles
 
 The companion accepts normalized activity events and returns text art, a mood label, and an optional preset quip. It does not call an AI service. Generic pages provide interaction events without reading typed field content.
 
-The ChatGPT adapter can derive a small keyword category from the composer and inspect visible controls and answer-text length for activity. Raw prompt text is not passed to the companion or stored. Visible thinking labels and remounted old messages must not be mistaken for new answer text. Activity indicators describe observable UI behavior, not hidden model processing.
+The ChatGPT adapter observes visible generation controls, structural message counts, and input/submit events without reading composer values or conversation text. It does not classify keywords or infer receiving progress from answer length. WORKING/READY and generic completion reactions follow visible generation-control transitions. Activity indicators describe observable UI behavior, not hidden model processing.
 
 Animation uses the master motion setting and optional system reduced-motion following. Quip visibility and occasional rotation are independent of sprite motion. Controls must retain readable state when animation is disabled.
 

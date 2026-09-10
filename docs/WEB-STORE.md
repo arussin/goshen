@@ -1,5 +1,41 @@
 # Chrome Web Store release guide
 
+## 0.3.6 privacy candidate — not submitted
+
+The store currently distributes **0.3.5**. The candidate retains optional cross-site following, removes prompt and answer-text inspection, and adds **REMOVE CROSS-SITE ACCESS**. Automatic ChatGPT styling and ordinary per-tab themes remain available. HOPPER keeps generic event reactions; keyword-specific remarks and response-length-based activity are removed.
+
+Complete the candidate checks in [TESTING.md](TESTING.md), including an installed copy extracted from the exact ZIP, before uploading 0.3.6. Preserve the existing 0.3.5 ZIP. Reproduce the candidate ZIP twice, compare it with [the verifier](VERIFYING.md), and record the final source commit and SHA-256. The [0.3.5 verification record](releases/v0.3.5-verification.json) connects its preserved upload ZIP to exact source bytes; it does not verify Google's installed build.
+
+The separately saved 0.3.5 description edit adds only the MIT/open-source disclosure and source links. A saved dashboard draft is not a submitted or published listing change.
+
+### Candidate description additions and replacement
+
+Add after the opening paragraph:
+
+> Open source under the MIT License. Inspect the source code and privacy design at https://github.com/arussin/goshen. Select the source tag matching your installed version; development branches may contain unreleased changes.
+
+Replace 0.3.5's local text-check sentence only when the 0.3.6 package is submitted:
+
+> Goshen runs locally without analytics, remote code, or an AI service of its own. It does not read your typed prompts or conversation text. It uses page structure, visible controls, and interaction events for styling and decorative reactions. Appearance preferences stay on your device. Active tab origins and follow choices remain in browser-session storage.
+
+Extend the optional Follow bullet:
+
+> Optionally enable Follow this tab across sites. Chrome requests access to all ordinary HTTP/HTTPS websites; Goshen automatically follows only the tabs where you enable this option. Remove cross-site access revokes that optional access for every tab. Automatic ChatGPT access is separate.
+
+Retain all existing compatibility limitations. Do not claim open source, a checksum, or passing automated tests proves the extension is safe.
+
+### Candidate privacy and reviewer updates
+
+The manifest retains `storage`, `activeTab`, `scripting`, automatic ChatGPT matches, and optional HTTP/HTTPS host patterns. Follow still needs the user's Chrome permission grant. Its per-tab behavior does not narrow the underlying browser permission. Turning an individual Follow choice off leaves the permission in place; the separate global removal action requests revocation and verifies no optional website grants remain, including narrower site grants.
+
+Update the website-content explanation to structural elements, computed colors, visible controls, and interaction events. Remove the old prompt-keyword and answer-length explanations for this candidate. The current tab address still selects an adapter; explicit global removal also checks currently followed tabs' addresses to limit their records to current origins. Full addresses are not stored. Review each dashboard category against its current definition and the exact candidate policy; do not infer “no user data” from local-only processing.
+
+Ask reviewers to enable Follow on two tabs, remove cross-site access, confirm following is off for both and optional access is gone, then deliberately grant Follow again. Include permission denial, popup closure, delayed grants, and OFF races. The ChatGPT activity display now uses visible generation controls for coarse working/ready states. Keep the unresolved Gmail Chat limitation.
+
+## Historical 0.3.5 release preparation and evidence
+
+The following material records 0.3.5's behavior and release preparation. Its text-inspection descriptions apply to 0.3.5, not the 0.3.6 candidate. Do not reuse those sentences for the candidate submission.
+
 This guide prepares **Goshen Terminal 0.3.5** for a first store release. It includes draft listing copy and the maintainer's upload checklist. A prepared ZIP or completed checklist does not mean Google has reviewed or approved the extension.
 
 **Status recorded 2026-09-10:** The 0.3.5 source and privacy policy are publicly available, GitHub CI passed, and private vulnerability reporting is enabled. The Chrome Web Store submission contains the 0.3.5 package, listing images, privacy declarations, and reviewer instructions. Core installed-browser checks for the first unlisted preview have passed, including ChatGPT, ordinary-page activation, navigation, cached-page reactivation, OFF, HOPPER, and controlled delayed startup. Goshen Terminal 0.3.5 was submitted September 8 with automatic publication disabled, then approved by Google and manually published on September 10, 2026 as a **Free, Unlisted** early preview. [Install Goshen Terminal from the Chrome Web Store](https://chromewebstore.google.com/detail/jlhlihmmbllkllglociipkhafbpmhcle). Remaining compatibility and permission-path limitations are recorded in [TESTING.md](TESTING.md).

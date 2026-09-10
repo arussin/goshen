@@ -201,6 +201,114 @@ test('cross-site follow requests access immediately from its explicit gesture, t
   await settle();
   assert.equal(permissionRequests.length, 1, 'Turning following off never requests access');
   assert.equal(toggle.checked, false);
+  assert.equal(packets.some(packet => packet.type === 'goshen:remove-cross-site-access'), false, 'An individual tab choice must not revoke access for every tab');
+  assert.equal(nodes.get('remove-cross-site-access').hidden, false, 'Optional permission stays granted until explicitly removed');
+});
+
+test('global access removal is available only for actual granted access, including an inactive tab', async () => {
+  const absent = harness({ followCrossSite: true, persistent: true });
+  const granted = harness({ accessGranted: true });
+  const preview = harness({ preview: true });
+  await settle();
+  assert.equal(absent.nodes.get('remove-cross-site-access').hidden, true);
+  assert.equal(absent.nodes.get('remove-access-hint').hidden, true);
+  absent.nodes.get('remove-cross-site-access').fire('click');
+  assert.deepEqual(absent.messages, ['goshen:status']);
+  assert.equal(granted.nodes.get('remove-cross-site-access').hidden, false);
+  assert.equal(granted.nodes.get('remove-cross-site-access').disabled, false);
+  assert.equal(granted.nodes.get('remove-access-hint').hidden, false);
+  assert.equal(preview.nodes.get('remove-cross-site-access').hidden, true);
+});
+
+test('explicit global removal goes through the worker and reports success only after confirmed revocation', async () => {
+  let finishRemoval;
+  const response = { ok: true, tabId: 41, host: 'chatgpt.com', mode: 'chatgpt', enabled: true, persistent: true, followCrossSite: true, followPermissionGranted: true };
+  const { nodes, packets, saves, permissionRequests, panel } = harness({ automatic: true, handler: message => {
+    if (message.type === 'goshen:remove-cross-site-access') return new Promise(resolve => { finishRemoval = resolve; });
+    return response;
+  } });
+  await settle();
+  nodes.get('remove-cross-site-access').fire('click');
+  assert.deepEqual(packets.at(-1), { type: 'goshen:remove-cross-site-access', expectedTabId: 41 });
+  assert.equal(panel['aria-busy'], 'true');
+  for (const id of ['remove-cross-site-access', 'follow-tab', 'page-toggle', 'page-retry', 'enabled']) assert.equal(nodes.get(id).disabled, true, `${id} stays disabled during removal`);
+  assert.equal(nodes.get('page-notice').hidden, true);
+  finishRemoval({ ok: true, crossSiteAccessRemoved: true, followPermissionGranted: false, crossSiteAccessGranted: false });
+  await settle();
+  assert.equal(nodes.get('page-notice').hidden, false);
+  assert.equal(nodes.get('page-notice').textContent, 'Cross-site access removed. Automatic ChatGPT access is unchanged.');
+  assert.equal(nodes.get('remove-cross-site-access').hidden, true);
+  assert.equal(nodes.get('remove-access-hint').hidden, true);
+  assert.equal(nodes.get('follow-tab').checked, false);
+  assert.equal(nodes.get('page-state').textContent, 'ACTIVE');
+  assert.equal(nodes.get('page-host').textContent, 'chatgpt.com');
+  assert.equal(nodes.get('page-mode').textContent, 'CHATGPT TERMINAL');
+  assert.equal(nodes.get('enabled').checked, true);
+  assert.equal(nodes.get('enabled').disabled, false);
+  assert.equal(panel['aria-busy'], 'false');
+  assert.deepEqual(packets.map(packet => packet.type), ['goshen:status', 'goshen:remove-cross-site-access']);
+  assert.deepEqual(permissionRequests, []);
+  assert.deepEqual(saves, []);
+});
+
+test('failed global removal refreshes actual status while preserving the worker error', async () => {
+  let attempted = false;
+  const { nodes, packets } = harness({ handler: message => {
+    if (message.type === 'goshen:remove-cross-site-access') {
+      attempted = true;
+      return { ok: false, error: 'Chrome could not remove cross-site access. Try again.' };
+    }
+    return { ok: true, tabId: 41, host: 'example.org', mode: 'universal', enabled: true, persistent: true, followCrossSite: !attempted, followPermissionGranted: !attempted, crossSiteAccessGranted: true };
+  } });
+  await settle();
+  nodes.get('remove-cross-site-access').fire('click');
+  await settle();
+  assert.deepEqual(packets.map(packet => packet.type), ['goshen:status', 'goshen:remove-cross-site-access', 'goshen:status']);
+  assert.equal(nodes.get('page-error-message').textContent, 'Chrome could not remove cross-site access. Try again.');
+  assert.equal(nodes.get('page-error').hidden, false);
+  assert.equal(nodes.get('page-notice').hidden, true);
+  assert.equal(nodes.get('follow-tab').checked, false, 'Follow state comes from the refreshed reply, even when revocation failed');
+  assert.equal(nodes.get('remove-cross-site-access').hidden, false, 'Removal remains available when only one optional origin grant remains');
+  assert.equal(nodes.get('remove-cross-site-access').disabled, false);
+});
+
+test('failed refresh after removal failure leaves status unknown and retains the removal error', async () => {
+  let attempted = false;
+  const { nodes, messages } = harness({ handler: message => {
+    if (message.type === 'goshen:remove-cross-site-access') {
+      attempted = true;
+      return { ok: false, error: 'Permission removal failed.' };
+    }
+    if (attempted) throw new Error('Worker disconnected');
+    return { ok: true, tabId: 41, host: 'example.org', mode: 'universal', enabled: true, followPermissionGranted: true };
+  } });
+  await settle();
+  nodes.get('remove-cross-site-access').fire('click');
+  await settle();
+  assert.deepEqual(messages, ['goshen:status', 'goshen:remove-cross-site-access', 'goshen:status']);
+  assert.equal(nodes.get('page-error-message').textContent, 'Permission removal failed.');
+  assert.equal(nodes.get('page-error').hidden, false);
+  assert.equal(nodes.get('page-notice').hidden, true);
+  assert.equal(nodes.get('page-state').textContent, 'UNAVAILABLE');
+  assert.equal(nodes.get('page-retry').disabled, false);
+});
+
+test('an unconfirmed removal reply cannot show a success notice', async () => {
+  for (const reply of [
+    { ok: true, followPermissionGranted: false },
+    { ok: true, crossSiteAccessRemoved: true, followPermissionGranted: true },
+    { ok: true, crossSiteAccessRemoved: true, followPermissionGranted: false, crossSiteAccessGranted: true },
+  ]) {
+    const { nodes, messages } = harness({ handler: message => message.type === 'goshen:remove-cross-site-access' ? reply : ({ ok: true, tabId: 41, host: 'example.org', mode: 'universal', enabled: true, followPermissionGranted: true }) });
+    await settle();
+    nodes.get('remove-cross-site-access').fire('click');
+    await settle();
+    assert.deepEqual(messages, ['goshen:status', 'goshen:remove-cross-site-access', 'goshen:status']);
+    assert.equal(nodes.get('page-notice').hidden, true);
+    assert.equal(nodes.get('page-error').hidden, false);
+    assert.match(nodes.get('page-error-message').textContent, /Could not confirm/);
+    assert.equal(nodes.get('remove-cross-site-access').hidden, false);
+  }
 });
 
 test('denied follow permission leaves same-site persistence and active appearance intact', async () => {

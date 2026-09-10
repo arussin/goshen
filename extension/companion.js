@@ -6,7 +6,6 @@
   const WIDTH = 23;
   const HEIGHT = 14;
   const ACTIVITIES = new Set(['ready', 'typing', 'working', 'receiving']);
-  const TOPICS = new Set(['greeting', 'thanks', 'code', 'coffee', 'creative']);
   const EVENT_DURATION = { pet: 3200, sent: 2400, complete: 4500, navigate: 2800 };
   const QUIPS = Object.freeze({
     ready: [
@@ -54,11 +53,6 @@
       'Another corner of the grid.',
       'Terminal online. Make yourself at home.',
     ],
-    greeting: ['Hey, night runner. Pull up a terminal.', 'Hello from the warm side of the glass.'],
-    thanks: ['Anytime. Carrots also accepted.', 'A little kindness lights up the grid.'],
-    code: ['May your bugs be small and your coffee strong.', 'Semicolons and silicon dreams.'],
-    coffee: ['Caffeine is just human firmware.', 'One cup for you. One carrot for me.'],
-    creative: ['Make something the city has not seen.', 'A little imagination bends the grid.'],
   });
   const LABELS = Object.freeze({
     idle: 'HOPPER / STANDBY',
@@ -169,20 +163,17 @@
     let nextIdleQuipAt;
     let quipLockedUntil;
     let sequence;
-    let lastQuipKind;
 
     const safeTime = now => {
       const value = Number.isFinite(now) ? now : lastNow;
       lastNow = Math.max(lastNow, value);
       return lastNow;
     };
-    const safeTopic = topic => TOPICS.has(topic) ? topic : null;
     function choose(kind, now) {
       const choices = QUIPS[kind] || QUIPS.ready;
       const index = (sequence[kind] || 0) % choices.length;
       sequence[kind] = index + 1;
       line = choices[index];
-      lastQuipKind = kind;
       nextIdleQuipAt = now + 22000;
     }
 
@@ -196,32 +187,24 @@
       choose('ready', lastNow);
     }
 
-    function react(event, now, topic) {
+    function react(event, now) {
       if (!Object.prototype.hasOwnProperty.call(EVENT_DURATION, event)) return;
       const time = safeTime(now);
       reaction = { type: event, at: time, until: time + EVENT_DURATION[event] };
-      const topical = safeTopic(topic);
-      choose(event === 'sent' && topical ? topical : event, time);
+      choose(event, time);
       // Keep an event's line visible through the immediately following activity scan.
       quipLockedUntil = time + EVENT_DURATION[event];
     }
 
-    function frame({ now = lastNow, activity = 'ready', motion = true, quips = true, topic = null } = {}) {
+    function frame({ now = lastNow, activity = 'ready', motion = true, quips = true } = {}) {
       const time = safeTime(now);
       const nextActivity = ACTIVITIES.has(activity) ? activity : 'ready';
-      const topical = safeTopic(topic);
       if (nextActivity !== currentActivity) {
         currentActivity = nextActivity;
         activityAt = time;
-        if (time >= quipLockedUntil) choose(nextActivity === 'typing' && topical ? topical : nextActivity, time);
+        if (time >= quipLockedUntil) choose(nextActivity, time);
       } else if (nextActivity === 'ready' && quips && time >= nextIdleQuipAt && time >= quipLockedUntil) {
         choose('ready', time);
-      }
-      // Topic changes during one typing session can acknowledge a category once;
-      // arbitrary text never becomes dialogue or part of the sprite.
-      if (nextActivity === 'typing' && topical && lastQuipKind !== topical && time >= quipLockedUntil) {
-        choose(topical, time);
-        quipLockedUntil = time + 8000;
       }
       if (reaction && time >= reaction.until) reaction = null;
       let mood = { ready: 'idle', typing: 'listening', working: 'working', receiving: 'receiving' }[nextActivity];

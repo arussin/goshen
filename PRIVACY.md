@@ -1,5 +1,7 @@
 # Goshen Terminal privacy
 
+**Version scope:** This policy describes the 0.3.6 development candidate. For the currently published 0.3.5 release, see the [versioned privacy policy](https://github.com/arussin/goshen/blob/v0.3.5/PRIVACY.md).
+
 Goshen Terminal changes the appearance of browser pages locally. It does not operate a server, send analytics, or transmit page content.
 
 Goshen Terminal's use of user data complies with the Chrome Web Store User Data Policy, including its [Limited Use requirements](https://developer.chrome.com/docs/webstore/program-policies/limited-use). Data is used only for the local appearance and activity features described in this policy. It is not sold, used for advertising or credit decisions, or transferred to third parties.
@@ -12,13 +14,15 @@ On other websites, universal mode starts after you invoke Goshen Terminal and ac
 
 **Follow this tab across sites** requests the optional host patterns `http://*/*` and `https://*/*` through Chrome's permission prompt. They are not granted at installation. After approval, only tabs with their own enabled follow setting receive automatic reapplication on other supported sites. The extension does not request browsing-history access or inject into cross-origin frames. Browser-protected pages remain unsupported.
 
-The popup sends the explicit follow choice to the worker before requesting permission, so closing the popup does not lose that choice. If the popup closes and permission is denied or remains unavailable, the saved choice can stay paused; **ALLOW WEBSITE ACCESS** lets you retry. A saved choice is not a grant. Other-site injection still checks Chrome's actual permission, and OFF clears the tab's choice even if a permission response arrives later. No additional fields are stored for this flow.
+Chrome grants these optional patterns across ordinary HTTP/HTTPS websites, not just one tab. Limiting automatic use to enabled tabs is Goshen's behavior; it is not a narrower Chrome permission. Code running under those grants could access sensitive webpage content. Only grant cross-site access if you trust the extension and need the feature.
 
-The popup and background worker inspect the current tab's address to choose an adapter and reject unsupported pages. Only its origin (scheme, hostname, and port), tab ID, and follow flag enter session storage. Full paths, query strings, fragments, page titles, and browsing history are not stored or transmitted.
+The popup sends the explicit follow choice to the worker before requesting permission, so closing the popup does not lose that choice. If the popup closes and permission is denied or remains unavailable, the saved choice can stay paused; **ALLOW WEBSITE ACCESS** lets you retry. A saved choice is not a grant. Other-site injection still checks Chrome's actual permission, and OFF clears the tab's choice even if a permission response arrives later. The separate revocation control stores only the session boolean described below.
+
+The popup and background worker inspect the current tab's address to choose an adapter and reject unsupported pages. When you explicitly remove cross-site access, the worker also checks each currently followed tab's address to limit its remaining intent to its current origin. Only the origin (scheme, hostname, and port), tab ID, and follow flag enter session storage. Full paths, query strings, fragments, page titles, and browsing history are not stored or transmitted. A session-only `goshen.cross-site-access-revoked` boolean records an explicit global revocation so a delayed permission response cannot silently restore cross-site access. A new explicit Follow choice clears this block.
 
 ## What the page scripts inspect
 
-The ChatGPT adapter identifies the sidebar, conversation, composer, visible message elements, and visible generation controls. It counts visible messages and temporarily checks the length of visible assistant text to detect incoming text. A short check of composer keywords can choose a preset rabbit remark about greetings, thanks, coding, coffee, or creativity. Only that category is passed to the companion; prompt text and categories are not saved or sent elsewhere.
+The ChatGPT adapter identifies the sidebar, conversation, composer, visible message elements, and visible generation controls. It counts message elements by their structural roles and observes generation controls and interaction events. It does not read the composer's value or conversation text, classify prompt keywords, or measure answer-text length. HOPPER uses generic preset reactions; its activity display follows visible controls, not the contents of messages.
 
 Universal mode identifies page elements to apply conservative visual styling. Its companion reacts to interaction events such as typing or submitting a form without reading the field's typed text. It does not infer a model's state or interpret arbitrary website content.
 
@@ -51,7 +55,7 @@ A local service worker coordinates these actions and watches navigation loading,
 
 ## Control and removal
 
-Disable automatic ChatGPT styling through its power control, which also clears the current tab's intent. Use **TERMINAL OFF** or the companion's **OFF** control to remove universal styling and clear that tab's intent. Closing a tab also clears its record. Turning off **Follow this tab across sites** limits that tab to its current origin; Chrome's broader permission grant may remain until you remove website access in the extension's Chrome settings.
+Disable automatic ChatGPT styling through its power control, which also clears the current tab's intent. Use **TERMINAL OFF** or the companion's **OFF** control to remove universal styling and clear that tab's intent. Closing a tab also clears its record. Turning off **Follow this tab across sites** limits that tab to its current origin; it does not itself revoke Chrome's broader permission. **REMOVE CROSS-SITE ACCESS** is a separate global control: it turns off following for every active tab, invalidates pending reapplication, removes obsolete dynamic registrations, and asks Chrome to revoke the optional HTTP/HTTPS access. Success is reported only after checking that no optional website grants remain, including narrower site grants. Required ChatGPT access is excluded from that check. A failure is shown instead of claiming access was removed. Existing rendered themes can remain, and same-origin reapplication still depends on available access. Automatic ChatGPT access is separate and remains declared.
 
 While a theme is off, its activity timers and observers stop. A lightweight page-restoration listener remains until the runtime is destroyed; it can ask the worker whether an enabled tab may resume, but does not restore a cleared tab intent or read page content. For an eligible universal page, the worker reinstates any missing packaged styles through its normal permission-checked activation path, targeting only the sender's exact document. This restores appearance without adding permissions, stored fields, or page-content collection.
 

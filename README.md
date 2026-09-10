@@ -22,6 +22,8 @@ Turn familiar websites into a vintage terminal, with phosphor colors, glowing in
 
 These screenshots use fictional demo content and the extension's maximum settings: **Scanlines 40** and **Glow 60**.
 
+**Development candidate: 0.3.6.** This branch removes prompt/conversation text inspection and adds explicit removal of optional cross-site access. The store release remains 0.3.5 until the candidate's release checks and review are complete. After updating, refresh open pages so they use the new page scripts.
+
 ## Make it yours
 
 - Choose **amber, green, or ice**, then adjust glow, scanlines, and text size.
@@ -56,7 +58,7 @@ ChatGPT is styled automatically while **Automatic on ChatGPT** is enabled. Use t
 
 On other websites, the terminal belongs to the tab you activate. It stays with that tab through reloads and navigation within the same site. Turning it off restores the page and clears that tab's activation. Closing the tab also clears it.
 
-**Follow this tab across sites** is optional. Chrome asks for broader website access before it can work. That permission applies across Chrome, but the terminal still follows only the individual tabs where you enable the option. If access is paused, reopen the popup and choose **ALLOW WEBSITE ACCESS** to retry.
+**Follow this tab across sites** is optional. Chrome asks for broader website access before it can work. That permission applies across Chrome, but the terminal still follows only the individual tabs where you enable the option. If access is paused, reopen the popup and choose **ALLOW WEBSITE ACCESS** to retry. Turning Follow off stops that tab's following but leaves Chrome's permission in place. In 0.3.6, **REMOVE CROSS-SITE ACCESS** revokes the optional grant for every tab; automatic ChatGPT access is separate.
 
 In universal mode, drag HOPPER's title bar to move the window or its lower-right grip to resize it. Both controls also support arrow keys, **Shift** for larger steps, and **Home** to reset. Position and size last for the current page only.
 
@@ -70,7 +72,11 @@ This is an early preview, and websites can have styling that conflicts with the 
 - Embedded Gmail Chat has an unresolved freeze/blank-view report; its responsiveness is not verified.
 - ChatGPT voice, uploads, canvas, and every native menu are not comprehensively covered.
 
-See the [compatibility and verification matrix](docs/TESTING.md) for the current release's tested scope and outstanding checks. The installed 0.3.5 retest is still pending.
+See the [compatibility and verification matrix](docs/TESTING.md) for the published release's tested scope and the 0.3.6 candidate's outstanding installed-browser checks.
+
+## Verify the source and package
+
+Goshen runs packaged JavaScript and CSS directly, with no compiler or minifier. See [source and package verification](docs/VERIFYING.md) for reproducible ZIP checksums and a local file comparison. Matching hashes establish byte identity, not proof that software is safe.
 
 ## Privacy
 

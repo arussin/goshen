@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "version": "0.3.5",
+  "sourceRepository": "https://github.com/arussin/goshen",
+  "sourceCommit": "ab46e1f0e494ef91b6ea465c5ff4d84cfaca3319",
+  "sourceTag": "v0.3.5",
+  "extensionTreeSha": "313dd5074f2fa87d1612ed07571a5ac858a98e34",
+  "archive": {
+    "name": "Goshen-Terminal-0.3.5.zip",
+    "sha256": "380908aa3c42a4eb526313db039528f05fb870353a65cf68dedaa71291a9322d"
+  },
+  "verification": "All 17 extension files and LICENSE in the preserved local release ZIP match the corresponding GitHub Git blob hashes at the source commit. No missing or extra archive entries were found.",
+  "limitations": [
+    "This records the preserved local release ZIP, not a downloaded Chrome Web Store CRX or installed extension.",
+    "Hashes establish byte identity with trusted expected values; they do not prove safe behavior.",
+    "The historic source includes mixed line endings. Preserve its exact Git bytes when reproducing it."
+  ],
+  "files": [
+    {
+      "path": "LICENSE",
+      "bytes": 1061,
+      "sha256": "0ae8ac1a6213116919ae6372b37cc2a44b002586aca550dda8da76a9852f5075",
+      "gitBlobSha": "da379ec54be3e5a121e11dd2443f88fdbe2bec4c"
+    },
+    {
+      "path": "background.js",
+      "bytes": 25164,
+      "sha256": "3c26ae66d5959045d620b20129c09e179e105557bc6375eea92e67ef5b930e99",
+      "gitBlobSha": "993ca8796b38e9f42b6846f873a475b807b6a721"
+    },
+    {
+      "path": "companion.js",
+      "bytes": 9228,
+      "sha256": "8a2cf70b86fad38c437259d34c95f227315d6396ee5507566c78ac997dccb594",
+      "gitBlobSha": "1ab906c496b0ebb1179c1f11d0be3ceaebb1ac19"
+    },
+    {
+      "path": "content.css",
+      "bytes": 24363,
+      "sha256": "d420fca3da48dd2682a3b59b7e3a778a7d927eb5e978b94c414a0c1463da786c",
+      "gitBlobSha": "0c1a7508f39772d4970eced03ed6ef522ac73455"
+    },
+    {
+      "path": "content.js",
+      "bytes": 35807,
+      "sha256": "9be174c53ba0d594dda80892e8e8b153f8c3c4a288763ae51b087fb1dd3c3df8",
+      "gitBlobSha": "9dfdd469b19493295f88a1382fb1e591c8e6e022"
+    },
+    {
+      "path": "gmail.js",
+      "bytes": 5223,
+      "sha256": "dd70fa378c3e2fd49d989dbcaeea9a9813ec8aedd92595a84af083bd25a08176",
+      "gitBlobSha": "a91971ca17b20b72864c970b4f84160885546e01"
+    },
+    {
+      "path": "icons/icon-128.png",
+      "bytes": 4313,
+      "sha256": "6be8113c64333cc6293faf27feb4a44839c82f25eb98240f1b5ac66abe8a8819",
+      "gitBlobSha": "1eb61750e6a4a4ae21efe374a3b2fffb67866095"
+    },
+    {
+      "path": "icons/icon-16.png",
+      "bytes": 169,
+      "sha256": "5a10f5d4d6176d344f8e97562bac2f707247245f440dc7b27350475edc073a31",
+      "gitBlobSha": "f32d707fe9800d2fd5063a3901ce0d572cd4b8a8"
+    },
+    {
+      "path": "icons/icon-32.png",
+      "bytes": 377,
+      "sha256": "5d81b039db299742eb30217c396fe31c761c46ae15b4467ff0b6a516428bbf1d",
+      "gitBlobSha": "f78e837c95229e301d87db325de607e830d5c079"
+    },
+    {
+      "path": "icons/icon-48.png",
+      "bytes": 713,
+      "sha256": "99a66fdf364ed31bfea999f285a68430087cd85088072040e11814a20d136978",
+      "gitBlobSha": "05c251858b76afb44751eb14b2188ad6cf41795f"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 1128,
+      "sha256": "875382839bcec0e3173ec9d0ab37ccceb149a6f20c1a07bbe7dd33c3b7ed572e",
+      "gitBlobSha": "a6338d7c6ea6d0fa7e2056a5e8cfe1dc3f133585"
+    },
+    {
+      "path": "popup.css",
+      "bytes": 9603,
+      "sha256": "6c9e2d32a652639f90d2cc2bb6fe462b67ff7d9a0ab9478ba11f32a530205191",
+      "gitBlobSha": "0c2dce244d58804c91463ac20123a5ae1583be28"
+    },
+    {
+      "path": "popup.html",
+      "bytes": 6797,
+      "sha256": "f4348fcdc87e865ff3781b3f6833f2267ec1df10e96c6274dabe3e0dc82ff24b",
+      "gitBlobSha": "93aa352af0a5b6d1a74617496d233f50aebd69d9"
+    },
+    {
+      "path": "popup.js",
+      "bytes": 13688,
+      "sha256": "2932fed820923641b2bc998aac57be5061136a21803cbdf2736033f06373b08d",
+      "gitBlobSha": "5c1d267d6f333f9b0a97bec50a39e38a8482fd83"
+    },
+    {
+      "path": "settings.js",
+      "bytes": 4422,
+      "sha256": "0813a0c727b697947d74bf234a040461644f74f7962f9b1b829a9928f90d7737",
+      "gitBlobSha": "d5f87d487252165c3bb51858c5c78f5d7c85dd50"
+    },
+    {
+      "path": "sites.js",
+      "bytes": 1507,
+      "sha256": "01c07a413fb0903f2fb51c5a972c833f000ede29f409ac877420402f9712a77d",
+      "gitBlobSha": "778acfd395eb89e32b2b1f4b6ef8db64a91cf3e3"
+    },
+    {
+      "path": "universal.css",
+      "bytes": 6140,
+      "sha256": "c02b868b74ccddc46495629de79f87b4e4f276722ce510df0a015bbdc708e392",
+      "gitBlobSha": "4e65487d4eae193a599ab6cf56e9175c27d5b711"
+    },
+    {
+      "path": "universal.js",
+      "bytes": 43286,
+      "sha256": "49d72861047e6abaf7cc4c736d50170cd5dfd9214592ca0de5dbc51dbc1c0829",
+      "gitBlobSha": "711eee013209db7ed6166e2c8f73c387c3556d7e"
+    }
+  ]
+}

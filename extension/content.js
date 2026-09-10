@@ -44,11 +44,8 @@
   let lastFrameAt = 0;
   let typingUntil = 0;
   let lastSendAt = -10000;
-  let promptTopic = null;
   let previousPath = location.pathname;
   let activeStop = false;
-  let hasReceived = false;
-  let lastAssistant = { id: null, count: 0, length: 0 };
   let returnFocus = null;
   let destroyed = false;
   let lifecycleRevision = 0;
@@ -83,7 +80,7 @@
     });
     observedBody = document.body;
     if (observedBody) observer.observe(observedBody, {
-      subtree: true, childList: true, characterData: true, attributes: true,
+      subtree: true, childList: true, attributes: true,
       attributeFilter: ['class', 'style', 'hidden', 'aria-hidden', 'aria-label', 'aria-busy', 'data-testid', 'disabled', 'data-state', 'data-cd-main', 'data-cd-sidebar', 'data-cd-app', 'data-cd-workspace', 'data-cd-composer'],
     });
   }
@@ -107,25 +104,14 @@
   }
 
   function activity() {
-    return activeStop ? (hasReceived ? 'receiving' : 'working') : performance.now() < typingUntil ? 'typing' : 'ready';
-  }
-
-  function classifyTopic(text) {
-    const sample = String(text || '').slice(0, 1500).toLowerCase();
-    if (/\b(coffee|caffeine|espresso)\b/.test(sample)) return 'coffee';
-    if (/\b(code|coding|bug|debug|python|javascript|function)\b/.test(sample)) return 'code';
-    if (/\b(design|draw|imagine|creative|art|story)\b/.test(sample)) return 'creative';
-    if (/\b(thanks|thank you)\b/.test(sample)) return 'thanks';
-    if (/^(hi|hello|hey|good morning)\b/.test(sample.trim())) return 'greeting';
-    return null;
+    return activeStop ? 'working' : performance.now() < typingUntil ? 'typing' : 'ready';
   }
 
   function onInput(event) {
     const prompt = event.target?.closest?.(selectors.prompt);
     if (!prompt || prompt.closest('#cd-shell')) return;
     typingUntil = performance.now() + 2400;
-    // Only a small topic category survives this event; no prompt text is stored.
-    promptTopic = classifyTopic(prompt.value ?? prompt.textContent);
+    // React to the input event without reading the draft or any field value.
     renderCompanion(performance.now());
   }
 
@@ -134,7 +120,7 @@
     if (now - lastSendAt < 400) return;
     lastSendAt = now;
     typingUntil = 0;
-    companion?.react('sent', now, promptTopic);
+    companion?.react('sent', now);
     renderCompanion(now);
     scheduleScan();
   }
@@ -301,23 +287,9 @@
     const scope = main || document;
     syncLoaders(scope);
     const stop = [...scope.querySelectorAll(selectors.stop)].find(isOnscreen);
-    const assistantMessages = [...scope.querySelectorAll('[data-message-author-role="assistant"]')].filter(isRendered);
-    const assistant = assistantMessages.at(-1) || null;
-    // Thinking labels are status, not answer text. Stable ids and counts avoid
-    // treating a remounted old message as a newly arriving answer.
-    const answer = assistant?.querySelector('.markdown, .prose');
-    const statusOnly = assistant?.querySelector(`${selectors.loading}, [role="status"], [aria-busy="true"]`);
-    const assistantLength = answer ? answer.textContent.length : statusOnly ? 0 : assistant?.textContent.length || 0;
-    const assistantId = assistant?.getAttribute('data-message-id') || null;
-    const messageChanged = assistantLength > 0 &&
-      (assistantLength !== lastAssistant.length || assistantMessages.length > lastAssistant.count ||
-        (assistantId && lastAssistant.id && assistantId !== lastAssistant.id));
+    // Visible generation controls provide a coarse activity signal. Neither
+    // prompt nor response text is read to infer what the model is doing.
     const wasActive = activeStop;
-    if (stop) {
-      hasReceived = (nativeLoaders.size === 0 || Boolean(answer && assistantLength > 0)) && ((activeStop && hasReceived) || messageChanged);
-    } else {
-      hasReceived = false;
-    }
     activeStop = Boolean(stop);
     if (wasActive && !activeStop) companion?.react('complete', performance.now());
     if (location.pathname !== previousPath) {
@@ -325,8 +297,7 @@
       typingUntil = 0;
       companion?.react('navigate', performance.now());
     }
-    lastAssistant = { id: assistantId, count: assistantMessages.length, length: assistantLength };
-    const state = stop ? (hasReceived ? 'receiving' : 'working') : 'ready';
+    const state = stop ? 'working' : 'ready';
     setAttribute(shell, 'data-state', state);
     setAttribute(root, 'data-cd-state', state);
     setText(elements.state, state.toUpperCase());
@@ -375,7 +346,7 @@
     setAttribute(shell, 'data-activity', current);
     setAttribute(root, 'data-cd-activity', current);
     setText(elements.state, current.toUpperCase());
-    const resident = companion?.frame({ now, activity: current, motion: Boolean(canAnimate()), quips: settings.quips, topic: promptTopic });
+    const resident = companion?.frame({ now, activity: current, motion: Boolean(canAnimate()), quips: settings.quips });
     if (resident) {
       setText(elements.ascii, resident.art);
       setText(elements.companionLabel, resident.label);
@@ -511,7 +482,7 @@
     shell = document.createElement('div');
     shell.id = 'cd-shell';
     shell.className = 'cd-shell';
-    shell.dataset.version = '0.3.5';
+    shell.dataset.version = '0.3.6';
     shell.innerHTML = `
       <header class="cd-topbar">
         <div class="cd-brand"><span class="cd-brand-icon" aria-hidden="true">▥</span><span class="cd-brand-name">TERMINAL</span><span class="cd-model">GT—01</span></div>
@@ -659,11 +630,9 @@
     nativeLoaders.clear();
     rootAttributes.forEach(name => root.removeAttribute(name));
     rootVariables.forEach(name => root.style.removeProperty(name));
-    activeStop = hasReceived = false;
+    activeStop = false;
     typingUntil = 0;
-    promptTopic = null;
     companion?.reset(performance.now());
-    lastAssistant = { id: null, count: 0, length: 0 };
     returnFocus = null;
   }
 

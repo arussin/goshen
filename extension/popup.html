@@ -21,10 +21,13 @@
       <p id="page-hint" class="hint">Connecting to the active browser tab.</p>
       <div class="tab-follow" id="tab-follow">
         <label class="toggle-label" for="follow-tab"><span><strong>Follow this tab across sites</strong><small id="follow-hint">Stays on this site after navigation and reloads.</small></span><span class="switch"><input id="follow-tab" type="checkbox" disabled><span class="switch-track" aria-hidden="true"></span></span></label>
-        <p class="permission-hint">Optional: Chrome will ask for website access. Only tabs you enable will follow you.</p>
+        <p class="permission-hint">Chrome will ask for access to all websites. Only tabs you enable will follow you.</p>
         <button id="follow-access" type="button" hidden>ALLOW WEBSITE ACCESS</button>
+        <button id="remove-cross-site-access" type="button" aria-describedby="remove-access-hint" hidden>REMOVE CROSS-SITE ACCESS</button>
+        <p class="permission-hint" id="remove-access-hint" hidden>Removes optional access for every tab. Automatic ChatGPT access is separate.</p>
         <button id="page-forget" type="button" hidden>TERMINAL OFF</button>
       </div>
+      <p class="page-notice" id="page-notice" role="status" aria-live="polite" hidden></p>
       <div class="page-error" id="page-error" role="alert" hidden><p id="page-error-message"></p><button id="page-retry" type="button">CHECK AGAIN</button></div>
     </section>
     <div class="section-label preferences-label"><span>APPEARANCE</span><span>SHARED PREFERENCES</span></div>
