@@ -4,9 +4,11 @@
 importScripts('sites.js', 'settings.js');
 
 const tabOperations = new Map();
-const commands = new Set(['goshen:status', 'goshen:enable', 'goshen:disable', 'goshen:follow']);
+const commands = new Set(['goshen:status', 'goshen:enable', 'goshen:disable', 'goshen:follow', 'goshen:remove-cross-site-access']);
 const SESSION_KEY = 'goshen.tab-intents';
+const REVOKED_KEY = 'goshen.cross-site-access-revoked';
 const FOLLOW_ORIGINS = ['http://*/*', 'https://*/*'];
+const REQUIRED_ORIGINS = new Set(['https://chatgpt.com/*', 'https://chat.openai.com/*']);
 const intents = new Map();
 const generations = new Map();
 const closedTabs = new Set();
@@ -19,21 +21,39 @@ const earlyNavigation = new Map();
 const readinessSignals = new Map();
 const EARLY_RETRY_DELAYS = [40, 80, 160, 320, 640, 1000, 1500];
 let sessionWrites = Promise.resolve();
-const ready = chrome.storage.session.get(SESSION_KEY).then(stored => {
+let accessRevision = 0;
+let crossSiteAccessRevoked = false;
+let removalOperation = null;
+let grantRevision = 0;
+
+async function clearLegacyRegistrations() {
+  // This version uses only declarative ChatGPT scripts and document-targeted
+  // injection. Dynamic registrations left by older builds are obsolete.
+  const registrations = await chrome.scripting.getRegisteredContentScripts();
+  if (registrations.length) await chrome.scripting.unregisterContentScripts({ ids: registrations.map(script => script.id) });
+}
+
+const stateReady = chrome.storage.session.get([SESSION_KEY, REVOKED_KEY]).then(stored => {
+  crossSiteAccessRevoked = stored[REVOKED_KEY] === true;
   for (const [key, value] of Object.entries(stored[SESSION_KEY] || {})) {
     const id = Number(key);
     if (!Number.isInteger(id) || id < 0 || !value || typeof value.origin !== 'string') continue;
     try {
       const origin = new URL(value.origin);
       if (!['http:', 'https:'].includes(origin.protocol) || origin.origin !== value.origin) continue;
-      intents.set(id, { origin: origin.origin, followCrossSite: value.followCrossSite === true });
+      intents.set(id, { origin: origin.origin, followCrossSite: !crossSiteAccessRevoked && value.followCrossSite === true });
     } catch { /* Discard malformed session state. */ }
   }
 });
+const ready = Promise.all([stateReady, clearLegacyRegistrations()]);
+// A failed cleanup prevents worker-controlled injection. The declarative
+// ChatGPT adapter is separate; a control request reports the startup failure.
+void ready.catch(() => {});
 
 function persistIntents() {
   const operation = sessionWrites.catch(() => {}).then(() => chrome.storage.session.set({
     [SESSION_KEY]: Object.fromEntries(intents),
+    [REVOKED_KEY]: crossSiteAccessRevoked,
   }));
   sessionWrites = operation;
   return operation;
@@ -48,7 +68,8 @@ function clearEarlyNavigation(id, version) {
 }
 function cancelTab(id) { clearEarlyNavigation(id); readinessSignals.delete(id); deferredAuto.delete(id); generations.set(id, generation(id) + 1); }
 function currentOperation(id, version) {
-  return () => { if (closedTabs.has(id) || generation(id) !== version) throw new Error('GOSHEN_CANCELED'); };
+  const revision = accessRevision;
+  return () => { if (closedTabs.has(id) || generation(id) !== version || accessRevision !== revision) throw new Error('GOSHEN_CANCELED'); };
 }
 
 function queueOperation(id, action) {
@@ -73,17 +94,108 @@ async function clearIntent(id) {
 }
 
 async function withIntent(response, id) {
-  const followPermissionGranted = await chrome.permissions.contains({ origins: FOLLOW_ORIGINS }).catch(() => false);
+  const [grants, optionalOrigins] = await Promise.all([
+    Promise.all(FOLLOW_ORIGINS.map(origin => chrome.permissions.contains({ origins: [origin] }).catch(() => null))),
+    grantedOptionalOrigins().catch(() => null),
+  ]);
   const intent = intents.get(id);
   const persistent = Boolean(intent);
   return {
     ...response,
     persistent,
     followCrossSite: intent?.followCrossSite === true,
-    followPermissionGranted,
+    followPermissionGranted: grants.every(granted => granted === true),
+    // A partial grant or failed lookup must still leave the removal control
+    // available; neither means that all optional access has been removed.
+    crossSiteAccessGranted: optionalOrigins === null || optionalOrigins.length > 0,
     persistencePaused: persistent && !response.enabled,
   };
 }
+
+async function grantedOptionalOrigins() {
+  const permission = await chrome.permissions.getAll();
+  if (!permission || permission.origins !== undefined && !Array.isArray(permission.origins)) throw new Error('GOSHEN_ACCESS_UNKNOWN');
+  const origins = permission.origins || [];
+  if (origins.some(origin => typeof origin !== 'string')) throw new Error('GOSHEN_ACCESS_UNKNOWN');
+  // The only required hosts in this manifest are the declarative ChatGPT
+  // scopes. A one-site optional grant is still access, even when contains()
+  // correctly reports that neither all-HTTP nor all-HTTPS access is granted.
+  return origins.filter(origin => !REQUIRED_ORIGINS.has(origin));
+}
+
+async function removeOptionalHosts() {
+  let observed;
+  do {
+    observed = grantRevision;
+    try {
+      let optionalOrigins;
+      try { optionalOrigins = await grantedOptionalOrigins(); }
+      catch (error) {
+        // Still attempt the known broad grants when enumeration is unavailable,
+        // but do not claim that narrower grants have been accounted for.
+        await chrome.permissions.remove({ origins: FOLLOW_ORIGINS });
+        throw error;
+      }
+      await chrome.permissions.remove({ origins: [...new Set([...FOLLOW_ORIGINS, ...optionalOrigins])] });
+      if ((await grantedOptionalOrigins()).length) throw new Error('GOSHEN_ACCESS_REMAINS');
+    } catch (error) {
+      if (observed === grantRevision) throw error;
+    }
+    // A permission prompt opened before removal can resolve during it. Do
+    // another removal and verification before reporting that access is gone.
+  } while (observed !== grantRevision);
+}
+
+function removeCrossSiteAccess() {
+  if (removalOperation) return removalOperation;
+  accessRevision++;
+  for (const id of new Set([...intents.keys(), ...tabOperations.keys(), ...pendingAuto.keys()])) cancelTab(id);
+  const operation = (async () => {
+    try { await stateReady; }
+    catch {
+      // Even unavailable session storage must not prevent an attempt to
+      // remove the browser grant. Do not overwrite tab state we could not read.
+      await Promise.allSettled([clearLegacyRegistrations(), removeOptionalHosts()]);
+      throw new Error('GOSHEN_REMOVE_ACCESS_FAILED');
+    }
+    crossSiteAccessRevoked = true;
+    const followed = [];
+    for (const [id, intent] of intents) {
+      cancelTab(id);
+      if (!intent.followCrossSite) continue;
+      const local = { origin: intent.origin, followCrossSite: false };
+      intents.set(id, local);
+      followed.push([id, local]);
+    }
+    // Preserve each current appearance, but limit its future eligibility to
+    // its current origin. Missing/protected tabs lose their old follow intent.
+    const currentSites = await Promise.all(followed.map(async ([id, intent]) => {
+      try { return [id, intent, GoshenSites.resolve((await chrome.tabs.get(id)).url)]; }
+      catch { return [id, intent, null]; }
+    }));
+    for (const [id, intent, site] of currentSites) {
+      if (intents.get(id) !== intent) continue; // A concurrent OFF always wins.
+      if (site?.origin) intents.set(id, { origin: site.origin, followCrossSite: false });
+      else intents.delete(id);
+    }
+    // Try every cleanup even if one fails. Success requires persistent state,
+    // obsolete registrations, and all optional grants to be accounted for.
+    const results = await Promise.allSettled([persistIntents(), clearLegacyRegistrations(), removeOptionalHosts()]);
+    if (results.some(result => result.status === 'rejected')) throw new Error('GOSHEN_REMOVE_ACCESS_FAILED');
+    return { ok: true, crossSiteAccessRemoved: true, followPermissionGranted: false, crossSiteAccessGranted: false };
+  })();
+  removalOperation = operation.finally(() => { removalOperation = null; });
+  return removalOperation;
+}
+
+void ready.then(async () => {
+  // Cover a delayed old grant that outlived the previous worker instance.
+  // When nothing remains, avoid canceling the popup or same-site work just
+  // because the service worker woke with its revocation marker still set.
+  if (!crossSiteAccessRevoked) return;
+  const origins = await grantedOptionalOrigins().catch(() => null);
+  if (crossSiteAccessRevoked && (origins === null || origins.length)) return removeCrossSiteAccess();
+}).catch(() => {});
 
 // These functions are serialized into the extension's isolated world. Keep them
 // self-contained; they never run in the website's own JavaScript environment.
@@ -153,10 +265,12 @@ function pageError(value) {
 
 function friendlyError(error) {
   const message = String(error?.message || '');
-  if (/GOSHEN_CANCELED/i.test(message)) return 'This activation was canceled by a page change or by turning the terminal off.';
+  if (/GOSHEN_CANCELED/i.test(message)) return 'This activation was canceled because the page or its website access changed, or the terminal was turned off.';
   if (/GOSHEN_DOM_NOT_READY|GOSHEN_PRECOMMIT/i.test(message)) return 'This page is still starting. Try turning on the terminal again in a moment.';
   if (/GOSHEN_FOLLOW_PERMISSION/i.test(message)) return 'Allow website access to follow this tab across sites. Same-site navigation still works without it.';
   if (/GOSHEN_ENTER_FIRST/i.test(message)) return 'Turn on the terminal on this tab first, then choose whether it follows you across sites.';
+  if (/GOSHEN_REMOVING_ACCESS/i.test(message)) return 'Website access is being removed. Try again when that finishes.';
+  if (/GOSHEN_REMOVE_ACCESS_FAILED/i.test(message)) return 'Cross-site following is paused, but website access removal could not be verified. Try REMOVE CROSS-SITE ACCESS again or manage website access in Chrome.';
   if (/GOSHEN_REFRESH_REQUIRED|Extension context invalidated/i.test(message)) return 'Refresh this page to finish updating the terminal.';
   if (/GOSHEN_PAGE_CHANGED|No tab|No document|No frame|Frame.*removed|document.*removed/i.test(message)) return 'This page changed during activation. Open the terminal controls again on the page you want.';
   if (/Cannot access|cannot be scripted|Missing host permission|extensions gallery|not allowed/i.test(message)) return 'Chrome cannot theme this page. Try a regular website and reopen the terminal controls.';
@@ -248,9 +362,14 @@ async function runOnTab(tab, command, { automatic = false, check = () => {}, pre
 }
 
 async function control(message) {
+  if (message.type === 'goshen:remove-cross-site-access') return removeCrossSiteAccess();
+  const revision = accessRevision;
+  const expectedGeneration = Number.isInteger(message.expectedTabId) ? generation(message.expectedTabId) : null;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (revision !== accessRevision) throw new Error('GOSHEN_CANCELED');
   if (!Number.isInteger(tab?.id)) return { ok: true, mode: 'unsupported', host: 'No active tab', enabled: false, reason: 'Open a website to turn on the terminal.' };
   if (Number.isInteger(message.expectedTabId) && message.expectedTabId !== tab.id) throw new Error('GOSHEN_PAGE_CHANGED');
+  if (expectedGeneration !== null && generation(tab.id) !== expectedGeneration) throw new Error('GOSHEN_CANCELED');
   const command = message.type;
   if (command !== 'goshen:status' && command !== 'goshen:follow') cancelTab(tab.id);
   const check = currentOperation(tab.id, generation(tab.id));
@@ -258,6 +377,7 @@ async function control(message) {
   return queueOperation(tab.id, async () => {
     await ready;
     check();
+    if (removalOperation && (command === 'goshen:enable' || command === 'goshen:follow')) throw new Error('GOSHEN_REMOVING_ACCESS');
     const active = await chrome.tabs.get(tab.id);
     check();
     if (command === 'goshen:follow') {
@@ -275,6 +395,7 @@ async function control(message) {
         origin: !message.followCrossSite && site.origin ? site.origin : intent.origin,
         followCrossSite: message.followCrossSite,
       });
+      if (message.followCrossSite) crossSiteAccessRevoked = false;
       suppressedTabs.delete(tab.id);
       await persistIntents();
       check();
@@ -341,6 +462,7 @@ function resumeTab(id, signal) {
   void queueOperation(id, async () => {
     await ready;
     check();
+    if (removalOperation) return;
     if (signal && (readinessSignals.get(id)?.token !== signal.token || readinessSignals.get(id)?.version !== version)) return;
     const intent = intents.get(id);
     if (!intent) return;
@@ -401,7 +523,10 @@ chrome.tabs.onUpdated.addListener((id, change) => {
 });
 chrome.permissions.onAdded.addListener(permission => {
   if (!permission.origins?.length) return;
+  if (permission.origins.every(origin => REQUIRED_ORIGINS.has(origin))) return;
+  grantRevision++;
   void ready.then(() => {
+    if (crossSiteAccessRevoked || removalOperation) return removeCrossSiteAccess();
     for (const [id, intent] of intents) if (intent.followCrossSite) resumeTab(id);
   }).catch(() => {});
 });

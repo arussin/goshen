@@ -17,6 +17,9 @@
   const followTab = document.getElementById('follow-tab');
   const followHint = document.getElementById('follow-hint');
   const followAccess = document.getElementById('follow-access');
+  const removeCrossSiteAccess = document.getElementById('remove-cross-site-access');
+  const removeAccessHint = document.getElementById('remove-access-hint');
+  const pageNotice = document.getElementById('page-notice');
   const pageForget = document.getElementById('page-forget');
   const canControlPage = Boolean(globalThis.chrome?.runtime?.id && typeof globalThis.chrome?.runtime?.sendMessage === 'function');
   let current = { ...settings.defaults };
@@ -28,6 +31,7 @@
   let page = null;
   let automaticPageUpdate = null;
   let permissionBusy = false;
+  let removalBusy = false;
   let popupClosed = false;
 
   function render(value) {
@@ -54,7 +58,7 @@
     const supported = mode === 'chatgpt' || mode === 'universal';
     const enabled = page?.enabled === true;
     const persistent = page?.persistent === true;
-    const working = pageBusy || permissionBusy;
+    const working = pageBusy || permissionBusy || removalBusy;
     const needsAccess = page?.followCrossSite === true && page?.followPermissionGranted !== true;
     pagePanel.setAttribute('aria-busy', String(working));
     document.getElementById('enabled').disabled = canControlPage && working;
@@ -71,6 +75,9 @@
       : enabled || persistent ? 'Stays on this site after navigation and reloads.' : 'Turn on the terminal to keep this tab themed.';
     followAccess.hidden = !canControlPage || !needsAccess;
     followAccess.disabled = working;
+    removeCrossSiteAccess.hidden = !canControlPage || page?.crossSiteAccessGranted !== true;
+    removeCrossSiteAccess.disabled = working || removeCrossSiteAccess.hidden;
+    removeAccessHint.hidden = removeCrossSiteAccess.hidden;
     pageForget.hidden = !(persistent && !enabled && supported);
     pageForget.disabled = working;
     document.getElementById('page-retry').disabled = working;
@@ -95,7 +102,7 @@
     pageMode.textContent = mode === 'chatgpt' ? 'CHATGPT TERMINAL' : mode === 'universal' ? 'WEBSITE TERMINAL' : 'UNSUPPORTED PAGE';
     pageState.textContent = pageBusy ? (pageAction === 'goshen:status' ? 'CHECKING' : 'WORKING') : enabled ? 'ACTIVE' : persistent ? 'PAUSED' : supported ? 'OFF' : 'UNAVAILABLE';
     pageToggle.textContent = pageBusy
-      ? (pageAction === 'goshen:status' ? 'CHECKING PAGE…' : pageAction === 'goshen:follow' ? 'SAVING TAB SETTING…' : pageAction === 'goshen:disable' ? 'TURNING TERMINAL OFF…' : 'TURNING TERMINAL ON…')
+      ? (pageAction === 'goshen:status' ? 'CHECKING PAGE…' : pageAction === 'goshen:follow' ? 'SAVING TAB SETTING…' : pageAction === 'goshen:remove-cross-site-access' ? 'REMOVING CROSS-SITE ACCESS…' : pageAction === 'goshen:disable' ? 'TURNING TERMINAL OFF…' : 'TURNING TERMINAL ON…')
       : enabled || !supported && persistent ? 'TERMINAL OFF' : supported ? 'TERMINAL ON' : 'TERMINAL UNAVAILABLE';
     pageHint.textContent = !supported
       ? (page.reason || 'Chrome does not allow extensions to change this page. Open a regular website to use the terminal.')
@@ -110,6 +117,7 @@
     pageBusy = true;
     pageAction = type;
     pageError.hidden = true;
+    pageNotice.hidden = true;
     renderPage();
     try {
       let reply;
@@ -117,6 +125,11 @@
       catch { throw new Error('Could not connect to the terminal. Reload the extension and reopen this panel.'); }
       if (popupClosed) return false;
       if (!reply?.ok) throw new Error(reply?.error || 'Could not reach the terminal. Reload the extension, then check again.');
+      if (type === 'goshen:remove-cross-site-access') {
+        if (reply.crossSiteAccessRemoved !== true || reply.followPermissionGranted !== false || reply.crossSiteAccessGranted !== false) throw new Error('Could not confirm that cross-site access was removed. Check again.');
+        page = { ...page, followCrossSite: false, followPermissionGranted: false, crossSiteAccessGranted: false };
+        return true;
+      }
       if (!['chatgpt', 'universal', 'unsupported'].includes(reply.mode)) throw new Error('Could not read this page’s status. Check again.');
       page = {
         mode: reply.mode,
@@ -126,6 +139,7 @@
         persistent: reply.persistent === true,
         followCrossSite: reply.followCrossSite === true,
         followPermissionGranted: reply.followPermissionGranted === true,
+        crossSiteAccessGranted: typeof reply.crossSiteAccessGranted === 'boolean' ? reply.crossSiteAccessGranted : reply.followPermissionGranted === true,
         reason: typeof reply.reason === 'string' ? reply.reason : '',
       };
       return true;
@@ -142,7 +156,7 @@
   }
 
   function reconcileAutomaticPage() {
-    if (automaticPageUpdate === null || pageBusy || permissionBusy || !page || popupClosed) return;
+    if (automaticPageUpdate === null || pageBusy || permissionBusy || removalBusy || !page || popupClosed) return;
     const enabled = automaticPageUpdate;
     automaticPageUpdate = null;
     if (page.mode === 'chatgpt') void requestPage(enabled ? 'goshen:status' : 'goshen:disable');
@@ -228,6 +242,28 @@
     void requestFollowAccess();
   });
   followAccess.addEventListener('click', () => { if (!followAccess.disabled) void requestFollowAccess(); });
+  removeCrossSiteAccess.addEventListener('click', async () => {
+    if (removeCrossSiteAccess.disabled || popupClosed) return;
+    removalBusy = true;
+    renderPage();
+    try {
+      const removed = await requestPage('goshen:remove-cross-site-access');
+      if (popupClosed) return;
+      if (removed) {
+        pageNotice.textContent = 'Cross-site access removed. Automatic ChatGPT access is unchanged.';
+        pageNotice.hidden = false;
+      } else {
+        const removalError = pageErrorMessage.textContent;
+        await requestPage('goshen:status');
+        if (popupClosed) return;
+        pageErrorMessage.textContent = removalError;
+        pageError.hidden = false;
+      }
+    } finally {
+      removalBusy = false;
+      if (!popupClosed) { renderPage(); reconcileAutomaticPage(); }
+    }
+  });
   document.getElementById('page-retry').addEventListener('click', () => { void requestPage('goshen:status'); });
   form.addEventListener('submit', event => event.preventDefault());
   form.addEventListener('input', event => { if (event.target.type === 'range') showRange(event.target); });

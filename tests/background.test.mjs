@@ -21,8 +21,8 @@ function scriptArguments(args = []) {
 
 const settle = async () => { for (let turn = 0; turn < 3; turn++) await new Promise(resolve => setImmediate(resolve)); };
 
-function environment({ url = 'https://example.com/article', contentType = 'text/html', chatRuntime = false, settings = {}, tabs = true, session = {} } = {}) {
-  const state = { calls: [], writes: [], sessionWrites: [], permissionChecks: [], sessionData: plain(session), data: { 'cyberdeck.settings': { theme: 'green', universalStyle: 'frame', ...settings } }, css: false, active: false, failFiles: false, navigated: false, injections: 0, documentId: 'doc-1', permissionGranted: false,activeTabId:41,tabStatuses:new Map(), tabURLs: new Map(tabs ? [[41, url]] : []), pendingURLs: new Map(), timers: new Map(), now: 0, timerId: 0 };
+function environment({ url = 'https://example.com/article', contentType = 'text/html', chatRuntime = false, settings = {}, tabs = true, session = {}, permissionGranted = false, originPermissions = {}, registeredScripts = [], failSessionRead = false, failRegistrationRead = false } = {}) {
+  const state = { calls: [], writes: [], sessionWrites: [], permissionChecks: [], permissionRemovals: [], registrationCalls: [], registeredScripts: plain(registeredScripts), originPermissions: new Map(Object.entries({ 'https://chatgpt.com/*': true, 'https://chat.openai.com/*': true, ...originPermissions })), failSessionRead, failRegistrationRead, sessionData: plain(session), data: { 'cyberdeck.settings': { theme: 'green', universalStyle: 'frame', ...settings } }, css: false, active: false, failFiles: false, navigated: false, injections: 0, documentId: 'doc-1', permissionGranted,activeTabId:41,tabStatuses:new Map(), tabURLs: new Map(tabs ? [[41, url]] : []), pendingURLs: new Map(), timers: new Map(), now: 0, timerId: 0 };
   const attributes = new Map();
   const updated = new Set();
   const removed = new Set();
@@ -61,7 +61,27 @@ function environment({ url = 'https://example.com/article', contentType = 'text/
       onReplaced: { addListener: callback => replaced.add(callback) },
     },
     permissions: {
-      contains: async options => { state.permissionChecks.push(plain(options)); return state.permissionGranted; },
+      getAll: async () => {
+        const origins = new Set([...state.originPermissions].filter(([, granted]) => granted).map(([origin]) => origin));
+        for (const origin of ['http://*/*', 'https://*/*']) {
+          if (!state.originPermissions.has(origin) && state.permissionGranted) origins.add(origin);
+        }
+        return { permissions: ['storage', 'scripting', 'activeTab'], origins: [...origins] };
+      },
+      contains: async options => {
+        state.permissionChecks.push(plain(options));
+        return options.origins.every(origin => {
+          if (state.originPermissions.has(origin)) return state.originPermissions.get(origin);
+          const protocol = origin.startsWith('https:') ? 'https://*/*' : 'http://*/*';
+          return state.originPermissions.has(protocol) ? state.originPermissions.get(protocol) : state.permissionGranted;
+        });
+      },
+      remove: async options => {
+        state.permissionRemovals.push(plain(options));
+        state.permissionGranted = false;
+        for (const origin of options.origins) state.originPermissions.set(origin, false);
+        return true;
+      },
       onAdded: { addListener: callback => permissionAdded.add(callback) },
     },
     storage: {
@@ -70,12 +90,17 @@ function environment({ url = 'https://example.com/article', contentType = 'text/
         set: async patch => { state.writes.push(plain(patch)); Object.assign(state.data, plain(patch)); for (const callback of storageListeners) callback({ 'cyberdeck.settings': { newValue: state.data['cyberdeck.settings'] } }, 'local'); },
       },
       session: {
-        get: async () => plain(state.sessionData),
+        get: async () => { if (state.failSessionRead) throw new Error('Session storage unavailable'); return plain(state.sessionData); },
         set: async patch => { state.sessionWrites.push(plain(patch)); Object.assign(state.sessionData, plain(patch)); },
       },
       onChanged: { addListener: callback => storageListeners.add(callback) },
     },
     scripting: {
+      getRegisteredContentScripts: async () => { state.registrationCalls.push(['get']); if (state.failRegistrationRead) throw new Error('Registration lookup unavailable'); return plain(state.registeredScripts); },
+      unregisterContentScripts: async options => {
+        state.registrationCalls.push(['unregister', plain(options)]);
+        state.registeredScripts = state.registeredScripts.filter(script => !options.ids.includes(script.id));
+      },
       executeScript: async options => {
         const args = scriptArguments(options.args);
         state.calls.push(['execute', { target: plain(options.target), world: options.world, injectImmediately: options.injectImmediately, files: plain(options.files), func: options.func?.name, args }]);
@@ -152,7 +177,13 @@ function environment({ url = 'https://example.com/article', contentType = 'text/
     attributes.clear(); state.active = state.css = false; state.documentId = `doc-${++documentCount}`;
     replaced.forEach(callback => callback(id,old));
   }
-  function grantAccess() { state.permissionGranted = true; permissionAdded.forEach(callback => callback({ origins: ['http://*/*', 'https://*/*'] })); }
+  function grantAccess(origins = ['http://*/*', 'https://*/*']) {
+    if (origins.includes('http://*/*') && origins.includes('https://*/*')) {
+      state.permissionGranted = true;
+      for (const origin of origins) state.originPermissions.delete(origin);
+    } else for (const origin of origins) state.originPermissions.set(origin, true);
+    permissionAdded.forEach(callback => callback({ origins }));
+  }
   async function advance(milliseconds) {
     const target = state.now + milliseconds;
     await settle();
@@ -213,7 +244,7 @@ test('site policy selects exact tailored hosts and blocks browser/store addresse
 
 test('opening the popup inspects only the chosen tab without injecting a theme or storing its address', async () => {
   const env = environment();
-  assert.deepEqual(await env.send('goshen:status'), { ok: true, tabId: 41, host: 'example.com', mode: 'universal', enabled: false, persistent: false, followCrossSite: false, followPermissionGranted: false, persistencePaused: false });
+  assert.deepEqual(await env.send('goshen:status'), { ok: true, tabId: 41, host: 'example.com', mode: 'universal', enabled: false, persistent: false, followCrossSite: false, followPermissionGranted: false, crossSiteAccessGranted: false, persistencePaused: false });
   assert.equal(env.state.calls.filter(([name]) => name === 'execute').length, 1);
   assert.equal(env.state.calls.some(([name]) => name === 'insert'), false);
   assert.equal(env.state.writes.length, 0);
@@ -318,7 +349,7 @@ test('same-origin reloads and navigation resume only the opted-in tab, using ses
   const env = environment();
   const enabled = await env.send('goshen:enable');
   assert.equal(enabled.persistent, true);
-  assert.deepEqual(env.state.sessionData, { 'goshen.tab-intents': { 41: { origin: 'https://example.com', followCrossSite: false } } });
+  assert.deepEqual(env.state.sessionData, { 'goshen.tab-intents': { 41: { origin: 'https://example.com', followCrossSite: false } }, 'goshen.cross-site-access-revoked': false });
   assert.equal(JSON.stringify(env.state.sessionData).includes('/article'), false);
   env.navigate('https://example.com/next?private=query');
   env.update(41, { status: 'complete' });
@@ -1008,4 +1039,407 @@ test('a new completed document does not wait for a stale tabs loading flag', asy
   assert.equal(env.state.active,true);
   assert.equal(env.state.documentId,'doc-2');
   assert.equal(env.state.injections,2);
+});
+
+test('global removal clears every Follow choice, rebinds current sites and leaves rendered appearances untouched', async () => {
+  const env = environment({ url: 'https://current.example/article', permissionGranted: true, session: {
+    'goshen.tab-intents': {
+      41: { origin: 'https://old.example', followCrossSite: true },
+      42: { origin: 'https://manual.example', followCrossSite: false },
+      43: { origin: 'https://chatgpt.com', followCrossSite: true },
+      44: { origin: 'https://old.example', followCrossSite: true },
+      45: { origin: 'https://missing.example', followCrossSite: true },
+    },
+  } });
+  env.state.tabURLs.set(42, 'https://manual.example/article');
+  env.state.tabURLs.set(43, 'https://chatgpt.com/c/test');
+  env.state.tabURLs.set(44, 'chrome://settings');
+  env.state.tabURLs.set(99, 'https://ordinary.example');
+  env.state.active = env.state.css = true;
+  const result = await env.send('goshen:remove-cross-site-access');
+  assert.deepEqual(result, { ok: true, crossSiteAccessRemoved: true, followPermissionGranted: false, crossSiteAccessGranted: false });
+  assert.deepEqual(env.state.sessionData, {
+    'goshen.tab-intents': {
+      41: { origin: 'https://current.example', followCrossSite: false },
+      42: { origin: 'https://manual.example', followCrossSite: false },
+      43: { origin: 'https://chatgpt.com', followCrossSite: false },
+    },
+    'goshen.cross-site-access-revoked': true,
+  });
+  assert.equal(env.state.active, true);
+  assert.equal(env.state.css, true);
+  assert.deepEqual(env.state.calls, [], 'Global removal never probes, disables or reinjects any page');
+  assert.deepEqual(env.state.writes, [], 'Appearance and automatic ChatGPT preferences remain unchanged');
+  assert.deepEqual(env.state.permissionRemovals, [{ origins: ['http://*/*', 'https://*/*'] }]);
+  assert.equal(await env.chrome.permissions.contains({ origins: ['http://*/*'] }), false);
+  assert.equal(await env.chrome.permissions.contains({ origins: ['https://*/*'] }), false);
+});
+
+test('global removal keeps same-site manual operation and automatic ChatGPT appearance available', async () => {
+  const env = environment({ permissionGranted: true });
+  await env.send('goshen:enable');
+  await env.send({ type: 'goshen:follow', followCrossSite: true });
+  await settle();
+  env.navigate('https://current.example/one');
+  await settle();
+  assert.equal(env.state.active, true);
+  assert.equal((await env.send('goshen:remove-cross-site-access')).ok, true);
+  assert.equal(env.state.active, true);
+  env.navigate('https://current.example/two');
+  await settle();
+  assert.equal(env.state.active, true, 'The current origin keeps its manually activated theme');
+  env.navigate('https://example.com/back');
+  await settle();
+  assert.equal(env.state.active, false, 'The old Follow origin cannot revive cross-site activation');
+  assert.equal((await env.send('goshen:enable')).enabled, true, 'A new manual activation still works');
+
+  const chat = environment({ url: 'https://chatgpt.com/', chatRuntime: true, settings: { enabled: true }, permissionGranted: true });
+  await chat.send('goshen:enable');
+  const before = plain(chat.state.data);
+  const calls = chat.state.calls.length;
+  assert.equal((await chat.send('goshen:remove-cross-site-access')).ok, true);
+  assert.equal(chat.attributes.get('data-cd-enabled'), 'true');
+  assert.deepEqual(chat.state.data, before);
+  assert.equal(chat.state.calls.length, calls);
+});
+
+test('only the extension popup can request global permission removal', async () => {
+  const env = environment({ permissionGranted: true });
+  for (const sender of [
+    { id: 'other', url: 'chrome-extension://goshen-test/popup.html' },
+    { id: 'goshen-test', url: 'https://example.com', tab: { id: 41 } },
+    { id: 'goshen-test', url: 'chrome-extension://goshen-test/other.html' },
+  ]) assert.equal((await env.send('goshen:remove-cross-site-access', sender)).ok, false);
+  assert.deepEqual(env.state.permissionRemovals, []);
+  assert.equal(env.state.permissionGranted, true);
+});
+
+test('partial removal of either protocol never claims success and still exposes remaining access', async () => {
+  for (const remaining of ['http://*/*', 'https://*/*']) {
+    const env = environment({ permissionGranted: true });
+    await env.send('goshen:enable');
+    await env.send({ type: 'goshen:follow', followCrossSite: true });
+    await settle();
+    const remove = env.chrome.permissions.remove;
+    env.chrome.permissions.remove = async options => { await remove(options); env.state.originPermissions.set(remaining, true); return true; };
+    const result = await env.send('goshen:remove-cross-site-access');
+    assert.equal(result.ok, false);
+    assert.notEqual(result.crossSiteAccessRemoved, true);
+    assert.match(result.error, /could not be verified/);
+    const grants = await env.chrome.permissions.getAll();
+    assert.ok(grants.origins.includes(remaining));
+    assert.ok(!grants.origins.includes(remaining === 'http://*/*' ? 'https://*/*' : 'http://*/*'));
+    const status = await env.send('goshen:status');
+    assert.equal(status.followCrossSite, false);
+    assert.equal(status.followPermissionGranted, false);
+    assert.equal(status.crossSiteAccessGranted, true, 'A partial grant keeps the explicit removal control available');
+    assert.equal(env.state.sessionData['goshen.cross-site-access-revoked'], true);
+  }
+});
+
+test('rejected removal or a false removal result with grants remaining cannot report success', async () => {
+  for (const rejects of [true, false]) {
+    const env = environment({ permissionGranted: true });
+    await env.send('goshen:enable');
+    await env.send({ type: 'goshen:follow', followCrossSite: true });
+    await settle();
+    env.chrome.permissions.remove = async () => { if (rejects) throw new Error('Chrome rejected permission removal'); return false; };
+    const result = await env.send('goshen:remove-cross-site-access');
+    assert.equal(result.ok, false);
+    assert.notEqual(result.crossSiteAccessRemoved, true);
+    assert.equal(env.state.sessionData['goshen.tab-intents'][41].followCrossSite, false);
+    assert.equal(env.state.active, true);
+    assert.equal((await env.send('goshen:status')).crossSiteAccessGranted, true);
+  }
+});
+
+test('failed permission verification reports uncertainty and leaves removal available for retry', async () => {
+  for (const failBeforeRemoval of [true, false]) {
+    const env = environment({ permissionGranted: true });
+    await env.send('goshen:enable');
+    const getAll = env.chrome.permissions.getAll;
+    env.chrome.permissions.getAll = async () => {
+      if (failBeforeRemoval || env.state.permissionRemovals.length) throw new Error('Permission enumeration unavailable');
+      return getAll();
+    };
+    const result = await env.send('goshen:remove-cross-site-access');
+    assert.equal(result.ok, false);
+    assert.notEqual(result.crossSiteAccessRemoved, true);
+    assert.ok(env.state.permissionRemovals.some(request => request.origins.includes('http://*/*') && request.origins.includes('https://*/*')), 'Enumeration failure cannot prevent a fallback broad-removal attempt');
+    const status = await env.send('goshen:status');
+    assert.equal(status.followPermissionGranted, false);
+    assert.equal(status.crossSiteAccessGranted, true, 'An unknown grant is not presented as removed');
+  }
+});
+
+test('obsolete dynamic scripts are removed at startup and checked again during global removal', async () => {
+  const env = environment({ registeredScripts: [{ id: 'legacy-follow', matches: ['https://*/*'] }, { id: 'legacy-theme', matches: ['http://*/*'] }], permissionGranted: true });
+  await settle();
+  assert.deepEqual(env.state.registeredScripts, []);
+  assert.deepEqual(env.state.registrationCalls.find(([kind]) => kind === 'unregister')[1].ids.sort(), ['legacy-follow', 'legacy-theme']);
+  env.state.registeredScripts.push({ id: 'remaining-old-script', matches: ['https://*/*'] });
+  assert.equal((await env.send('goshen:remove-cross-site-access')).ok, true);
+  assert.deepEqual(env.state.registeredScripts, []);
+  assert.equal(env.state.injections, 0);
+});
+
+test('failed legacy-script cleanup cannot be reported as successful access removal', async () => {
+  const env = environment({ permissionGranted: true });
+  await settle();
+  env.state.registeredScripts.push({ id: 'legacy-follow', matches: ['https://*/*'] });
+  env.chrome.scripting.unregisterContentScripts = async () => { throw new Error('Unregistration failed'); };
+  const result = await env.send('goshen:remove-cross-site-access');
+  assert.equal(result.ok, false);
+  assert.notEqual(result.crossSiteAccessRemoved, true);
+  assert.equal(await env.chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }), false, 'Host removal is still attempted when registration cleanup fails');
+});
+
+test('an earlier startup cleanup failure cannot prevent a later explicit removal attempt', async () => {
+  const env = environment({ permissionGranted: true, failRegistrationRead: true, registeredScripts: [{ id: 'legacy-follow', matches: ['https://*/*'] }] });
+  await settle();
+  assert.equal((await env.send('goshen:enable')).ok, false);
+  assert.equal(env.state.injections, 0);
+  env.state.failRegistrationRead = false;
+  assert.equal((await env.send('goshen:remove-cross-site-access')).ok, true);
+  assert.deepEqual(env.state.registeredScripts, []);
+  assert.equal(await env.chrome.permissions.contains({ origins: ['http://*/*'] }), false);
+  assert.equal(await env.chrome.permissions.contains({ origins: ['https://*/*'] }), false);
+});
+
+test('unreadable session state still allows host removal but is never overwritten or reported as complete', async () => {
+  const session = { 'goshen.tab-intents': { 41: { origin: 'https://example.com', followCrossSite: true } } };
+  const env = environment({ permissionGranted: true, session, failSessionRead: true });
+  await settle();
+  const result = await env.send('goshen:remove-cross-site-access');
+  assert.equal(result.ok, false);
+  assert.notEqual(result.crossSiteAccessRemoved, true);
+  assert.equal(await env.chrome.permissions.contains({ origins: ['http://*/*'] }), false);
+  assert.equal(await env.chrome.permissions.contains({ origins: ['https://*/*'] }), false);
+  assert.deepEqual(env.state.sessionData, session);
+  assert.deepEqual(env.state.sessionWrites, []);
+});
+
+test('failed persistence of revoked state prevents success even after browser grants are removed', async () => {
+  const env = environment({ permissionGranted: true });
+  await env.send('goshen:enable');
+  env.chrome.storage.session.set = async () => { throw new Error('Session write unavailable'); };
+  const result = await env.send('goshen:remove-cross-site-access');
+  assert.equal(result.ok, false);
+  assert.notEqual(result.crossSiteAccessRemoved, true);
+  assert.equal(await env.chrome.permissions.contains({ origins: ['http://*/*'] }), false);
+  assert.equal(await env.chrome.permissions.contains({ origins: ['https://*/*'] }), false);
+});
+
+test('required ChatGPT grants do not trigger optional-access removal or disturb its revocation marker', async () => {
+  const env = environment({ url: 'https://chatgpt.com/', chatRuntime: true, settings: { enabled: true } });
+  assert.equal((await env.send('goshen:remove-cross-site-access')).ok, true);
+  const removals = env.state.permissionRemovals.length;
+  const writes = env.state.sessionWrites.length;
+  env.grantAccess(['https://chatgpt.com/*', 'https://chat.openai.com/*']);
+  await settle();
+  assert.equal(env.state.permissionRemovals.length, removals);
+  assert.equal(env.state.sessionWrites.length, writes);
+  assert.equal(env.state.sessionData['goshen.cross-site-access-revoked'], true);
+  assert.equal(env.attributes.get('data-cd-enabled'), 'true');
+  assert.equal(await env.chrome.permissions.contains({ origins: ['https://chatgpt.com/*', 'https://chat.openai.com/*'] }), true);
+});
+
+test('a revoked worker with no optional access can answer its first popup request without canceling it', async () => {
+  const env = environment({ session: { 'goshen.cross-site-access-revoked': true } });
+  const status = await env.send('goshen:status');
+  assert.equal(status.ok, true);
+  assert.equal(status.crossSiteAccessGranted, false);
+  assert.equal(env.state.permissionRemovals.length, 0);
+});
+
+test('a delayed old grant is removed again without reviving Follow, including after a worker restart', async () => {
+  const env = environment({ permissionGranted: true });
+  await env.send('goshen:enable');
+  await env.send({ type: 'goshen:follow', followCrossSite: true });
+  await settle();
+  assert.equal((await env.send('goshen:remove-cross-site-access')).ok, true);
+  const calls = env.state.calls.length;
+  const removals = env.state.permissionRemovals.length;
+  env.grantAccess();
+  await settle();
+  assert.ok(env.state.permissionRemovals.length > removals);
+  assert.equal(await env.chrome.permissions.contains({ origins: ['http://*/*'] }), false);
+  assert.equal(await env.chrome.permissions.contains({ origins: ['https://*/*'] }), false);
+  assert.equal(env.state.sessionData['goshen.tab-intents'][41].followCrossSite, false);
+  assert.equal(env.state.calls.length, calls, 'A stale grant cannot perform page work');
+
+  const restarted = environment({ session: env.state.sessionData, permissionGranted: true });
+  await settle();
+  assert.equal(await restarted.chrome.permissions.contains({ origins: ['http://*/*'] }), false);
+  assert.equal(await restarted.chrome.permissions.contains({ origins: ['https://*/*'] }), false);
+  assert.equal(restarted.state.sessionData['goshen.cross-site-access-revoked'], true);
+  assert.equal(restarted.state.sessionData['goshen.tab-intents'][41].followCrossSite, false);
+  assert.deepEqual(restarted.state.calls, []);
+});
+
+test('a late grant after verification snapshots cannot survive an in-flight global removal', async () => {
+  const env = environment({ permissionGranted: true });
+  await env.send('goshen:enable');
+  const getAll = env.chrome.permissions.getAll;
+  let reached, release, held = false;
+  const entered = new Promise(resolve => { reached = resolve; });
+  const barrier = new Promise(resolve => { release = resolve; });
+  env.chrome.permissions.getAll = async () => {
+    const result = await getAll();
+    if (!held && env.state.permissionRemovals.length) {
+      held = true; reached(); await barrier;
+    }
+    return result;
+  };
+  const removing = env.send('goshen:remove-cross-site-access');
+  await entered;
+  env.grantAccess();
+  await settle();
+  release();
+  const result = await removing;
+  await settle();
+  assert.equal(result.ok, true);
+  assert.deepEqual((await getAll()).origins.sort(), ['https://chat.openai.com/*', 'https://chatgpt.com/*'], 'A stale successful enumeration cannot conceal later optional grants');
+  assert.ok(env.state.permissionRemovals.length >= 2);
+});
+
+test('global removal cancels an activation paused during injection before it can create new intent', async () => {
+  const env = environment({ permissionGranted: true });
+  const insert = env.chrome.scripting.insertCSS;
+  let reached, release;
+  const entered = new Promise(resolve => { reached = resolve; });
+  const barrier = new Promise(resolve => { release = resolve; });
+  env.chrome.scripting.insertCSS = async options => { await insert(options); reached(); await barrier; };
+  const enabling = env.send('goshen:enable');
+  await entered;
+  assert.equal((await env.send('goshen:remove-cross-site-access')).ok, true);
+  release();
+  assert.equal((await enabling).ok, false);
+  await settle();
+  assert.equal(env.state.active, false);
+  assert.equal(env.state.css, false);
+  assert.deepEqual(env.state.sessionData['goshen.tab-intents'], {});
+  env.navigate('https://example.com/next');
+  await settle();
+  assert.equal(env.state.active, false);
+});
+
+test('an old Follow request cannot overtake removal but a new explicit Follow choice works afterward', async () => {
+  const env = environment({ permissionGranted: true });
+  await env.send('goshen:enable');
+  const get = env.chrome.tabs.get;
+  let reached, release, held = false;
+  const entered = new Promise(resolve => { reached = resolve; });
+  const barrier = new Promise(resolve => { release = resolve; });
+  env.chrome.tabs.get = async id => {
+    const tab = await get(id);
+    if (!held) { held = true; reached(); await barrier; }
+    return tab;
+  };
+  const following = env.send({ type: 'goshen:follow', followCrossSite: true });
+  await entered;
+  assert.equal((await env.send('goshen:remove-cross-site-access')).ok, true);
+  release();
+  assert.equal((await following).ok, false);
+  assert.equal(env.state.sessionData['goshen.tab-intents'][41].followCrossSite, false);
+  assert.equal(env.state.sessionData['goshen.cross-site-access-revoked'], true);
+  assert.equal((await env.send({ type: 'goshen:follow', followCrossSite: true })).followCrossSite, true);
+  assert.equal(env.state.sessionData['goshen.cross-site-access-revoked'], false);
+  env.grantAccess();
+  await settle();
+  env.navigate('https://new.example/allowed');
+  await settle();
+  assert.equal(env.state.active, true, 'The new explicit Follow choice permits a new cross-site grant');
+});
+
+test('one-site optional access is visible and explicitly removed while required ChatGPT grants remain', async () => {
+  const env = environment({ originPermissions: { 'https://example.org/*': true } });
+  assert.equal(await env.chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }), false);
+  const status = await env.send('goshen:status');
+  assert.equal(status.followPermissionGranted, false);
+  assert.equal(status.crossSiteAccessGranted, true, 'A narrow optional grant must still expose the global removal action');
+  const result = await env.send('goshen:remove-cross-site-access');
+  assert.equal(result.ok, true);
+  assert.equal(result.crossSiteAccessRemoved, true);
+  assert.ok(env.state.permissionRemovals.some(request => request.origins.includes('https://example.org/*')), 'The actual narrow grant must be included in the removal request');
+  assert.ok(env.state.permissionRemovals.every(request => !request.origins.includes('https://chatgpt.com/*') && !request.origins.includes('https://chat.openai.com/*')));
+  assert.deepEqual((await env.chrome.permissions.getAll()).origins.sort(), ['https://chat.openai.com/*', 'https://chatgpt.com/*']);
+  assert.equal((await env.send('goshen:status')).crossSiteAccessGranted, false);
+});
+
+test('a narrow optional grant surviving removal prevents a false success even when both broad checks are false', async () => {
+  const env = environment({ originPermissions: { 'https://example.org/*': true } });
+  const remove = env.chrome.permissions.remove;
+  env.chrome.permissions.remove = async options => {
+    await remove(options);
+    env.state.originPermissions.set('https://example.org/*', true);
+    return true;
+  };
+  const result = await env.send('goshen:remove-cross-site-access');
+  assert.equal(result.ok, false);
+  assert.notEqual(result.crossSiteAccessRemoved, true);
+  assert.equal(await env.chrome.permissions.contains({ origins: ['http://*/*'] }), false);
+  assert.equal(await env.chrome.permissions.contains({ origins: ['https://*/*'] }), false);
+  assert.ok((await env.chrome.permissions.getAll()).origins.includes('https://example.org/*'));
+  assert.equal((await env.send('goshen:status')).crossSiteAccessGranted, true);
+});
+
+test('commands already waiting on the active-tab query cannot revive Follow or activation after global removal', async () => {
+  for (const command of ['goshen:follow', 'goshen:enable']) {
+    const env = environment({ permissionGranted: true });
+    if (command === 'goshen:follow') await env.send('goshen:enable');
+    const query = env.chrome.tabs.query;
+    let reached, release, held = false;
+    const entered = new Promise(resolve => { reached = resolve; });
+    const barrier = new Promise(resolve => { release = resolve; });
+    env.chrome.tabs.query = async options => {
+      const tabs = await query(options);
+      if (!held) { held = true; reached(); await barrier; }
+      return tabs;
+    };
+    const pending = env.send({ type: command, ...(command === 'goshen:follow' ? { followCrossSite: true } : {}) });
+    await entered;
+    assert.equal((await env.send('goshen:remove-cross-site-access')).ok, true);
+    const callsAfterRemoval = env.state.calls.length;
+    release();
+    const result = await pending;
+    assert.equal(result.ok, false, `${command} began before removal and must not acquire a newer authorization`);
+    assert.equal(env.state.calls.length, callsAfterRemoval, 'The stale command cannot proceed to inspect or alter a page');
+    assert.equal(env.state.sessionData['goshen.cross-site-access-revoked'], true);
+    assert.equal(env.state.sessionData['goshen.tab-intents'][41]?.followCrossSite === true, false);
+    assert.equal(env.state.active, command === 'goshen:follow', 'An existing appearance survives; a pending activation does not run');
+    env.grantAccess();
+    await settle();
+    env.navigate('https://other.example/after-revocation');
+    await settle();
+    assert.equal(env.state.active, false);
+  }
+});
+
+test('an expected-tab command waiting on its query cannot overtake a later OFF on that tab', async () => {
+  for (const command of ['goshen:follow', 'goshen:enable']) {
+    const env = environment({ permissionGranted: true });
+    await env.send('goshen:enable');
+    const query = env.chrome.tabs.query;
+    let reached, release, held = false;
+    const entered = new Promise(resolve => { reached = resolve; });
+    const barrier = new Promise(resolve => { release = resolve; });
+    env.chrome.tabs.query = async options => {
+      const tabs = await query(options);
+      if (!held) { held = true; reached(); await barrier; }
+      return tabs;
+    };
+    const pending = env.send({ type: command, expectedTabId: 41, ...(command === 'goshen:follow' ? { followCrossSite: true } : {}) });
+    await entered;
+    assert.equal((await env.send({ type: 'goshen:disable', expectedTabId: 41 })).ok, true);
+    const callsAfterOff = env.state.calls.length;
+    release();
+    assert.equal((await pending).ok, false);
+    assert.equal(env.state.calls.length, callsAfterOff, 'The stale command must not inspect or alter the page after OFF');
+    assert.equal(env.state.active, false);
+    assert.deepEqual(env.state.sessionData['goshen.tab-intents'], {});
+    env.navigate('https://example.com/after-off');
+    await settle();
+    assert.equal(env.state.active, false);
+  }
 });

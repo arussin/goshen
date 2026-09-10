@@ -10,7 +10,7 @@ const defaults = { enabled: true, theme: 'amber', layout: 'deck', scanlines: 18,
 // A narrow DOM fixture keeps these lifecycle regressions runnable with Node
 // alone. It models tree ownership, filtered MutationObserver delivery, and
 // timers; it does not establish layout compatibility with the live website.
-async function environment(initial = {}, { messageHandler, preview = false, loadHandler } = {}) {
+async function environment(initial = {}, { messageHandler, preview = false, loadHandler, nativeSetup } = {}) {
   const observers = new Set();
   const resizeObservers = new Set();
   const timers = new Map();
@@ -192,6 +192,7 @@ async function environment(initial = {}, { messageHandler, preview = false, load
     return body;
   }
   document.documentElement.append(makeBody());
+  nativeSetup?.(document);
 
   class MutationObserver {
     constructor(callback) { this.callback = callback; this.targets = new Map(); this.records = []; observers.add(this); }
@@ -582,7 +583,28 @@ test('native loading text and decorative circles receive reversible light panels
   env.context.CyberdeckRuntime.destroy();
 });
 
-test('typing and native submission drive HOPPER without retaining the prompt or duplicate send reactions', async () => {
+test('startup does not read pre-existing drafts or conversations with quips enabled or disabled', async () => {
+  for (const quips of [true, false]) {
+    const env = await environment({ quips }, { nativeSetup(document) {
+      const message = document.createElement('div');
+      message.setAttribute('data-message-author-role', 'assistant');
+      message.textContent = 'Private conversation fixture';
+      document.querySelector('main').append(message);
+      const draft = document.querySelector('#prompt-textarea');
+      draft.textContent = 'Private draft fixture';
+      for (const native of [draft, message]) {
+        for (const property of ['value', 'textContent', 'innerText']) Object.defineProperty(native, property, {
+          get() { assert.fail(`Startup must not read native ${property}`); },
+        });
+      }
+    } });
+    assert.equal(env.document.documentElement.getAttribute('data-cd-enabled'), 'true');
+    assert.ok(env.document.querySelector('#cd-shell'));
+    env.context.CyberdeckRuntime.destroy();
+  }
+});
+
+test('typing and native submission drive HOPPER without reading the prompt or duplicating send reactions', async () => {
   const env = await environment();
   const { document } = env;
   const root = document.documentElement;
@@ -595,31 +617,35 @@ test('typing and native submission drive HOPPER without retaining the prompt or 
 
   const privatePrompt = 'Please debug my code with private customer value secret-7942.';
   prompt.textContent = privatePrompt;
+  for (const property of ['value', 'textContent', 'innerText']) Object.defineProperty(prompt, property, {
+    get() { assert.fail(`The extension must not read the draft's ${property}`); },
+  });
   document.dispatchEvent({ type: 'input', target: prompt });
   assert.equal(root.getAttribute('data-cd-activity'), 'typing');
   assert.equal(document.querySelector('.cd-pet-button').getAttribute('data-mood'), 'listening');
   assert.equal(env.companionFrames.at(-1).activity, 'typing');
-  assert.equal(env.companionFrames.at(-1).topic, 'code');
+  assert.equal(env.companionFrames.at(-1).topic, undefined);
   assert.ok(!document.querySelector('#cd-shell').textContent.includes('secret-7942'));
 
   document.dispatchEvent({ type: 'submit', target: form });
   document.dispatchEvent({ type: 'click', target: document.querySelector('[data-testid="send-button"]') });
   const sends = env.companionEvents.filter(event => event.event === 'sent');
   assert.equal(sends.length, 1, 'Click plus submit for the same action should produce one companion reaction');
-  assert.equal(sends[0].topic, 'code');
+  assert.equal(sends[0].topic, undefined);
   assert.equal(root.getAttribute('data-cd-activity'), 'ready');
   assert.equal(document.querySelector('.cd-pet-button').getAttribute('data-mood'), 'alert');
   assert.ok(!JSON.stringify(env.companionEvents).includes(privatePrompt));
   assert.ok(!JSON.stringify(env.companionFrames).includes('secret-7942'));
 
   env.advance(500);
+  env.setSettings({ quips: false });
   document.dispatchEvent({ type: 'input', target: prompt });
   env.advance(3100);
   assert.equal(root.getAttribute('data-cd-activity'), 'ready', 'Typing activity settles after the user pauses');
   env.context.CyberdeckRuntime.destroy();
 });
 
-test('native response activity drives working, receiving, completion and pet reactions', async () => {
+test('visible generation controls drive working, completion and pet reactions without reading responses', async () => {
   const env = await environment();
   const { document } = env;
   const main = document.querySelector('main');
@@ -634,10 +660,13 @@ test('native response activity drives working, receiving, completion and pet rea
   const assistant = document.createElement('div');
   assistant.setAttribute('data-message-author-role', 'assistant');
   assistant.textContent = 'The first words of a native streaming response.';
+  for (const property of ['value', 'textContent', 'innerText']) Object.defineProperty(assistant, property, {
+    get() { assert.fail(`The extension must not read the response's ${property}`); },
+  });
   main.append(assistant);
   env.advance();
-  assert.equal(document.documentElement.getAttribute('data-cd-activity'), 'receiving');
-  assert.equal(document.querySelector('.cd-pet-button').getAttribute('data-mood'), 'receiving');
+  assert.equal(document.documentElement.getAttribute('data-cd-activity'), 'working');
+  assert.equal(document.querySelector('.cd-pet-button').getAttribute('data-mood'), 'working');
   stop.remove();
   env.advance();
   assert.equal(document.documentElement.getAttribute('data-cd-activity'), 'ready');
@@ -652,7 +681,7 @@ test('native response activity drives working, receiving, completion and pet rea
   env.context.CyberdeckRuntime.destroy();
 });
 
-test('assistant thinking labels stay in working state until answer content actually arrives', async () => {
+test('changing status and answer content never changes the control-based generation signal', async () => {
   const env = await environment();
   const { document } = env;
   const main = document.querySelector('main');
@@ -682,16 +711,21 @@ test('assistant thinking labels stay in working state until answer content actua
   assert.match(document.querySelector('.cd-ascii').textContent, /┌─────────┐/);
 
   answer.textContent = 'Here is the actual answer, now streaming.';
+  for (const native of [label, answer, assistant]) {
+    for (const property of ['value', 'textContent', 'innerText']) Object.defineProperty(native, property, {
+      get() { assert.fail(`The extension must not inspect native ${property}`); },
+    });
+  }
   env.advance();
-  assert.equal(document.documentElement.getAttribute('data-cd-activity'), 'receiving');
-  assert.equal(document.querySelector('.cd-pet-button').getAttribute('data-mood'), 'receiving');
+  assert.equal(document.documentElement.getAttribute('data-cd-activity'), 'working');
+  assert.equal(document.querySelector('.cd-pet-button').getAttribute('data-mood'), 'working');
   stop.remove();
   env.advance();
   assert.equal(env.companionEvents.at(-1).event, 'complete');
   env.context.CyberdeckRuntime.destroy();
 });
 
-test('starting a new response does not mistake a remounted previous answer for newly received content', async () => {
+test('response identities and remounts do not infer receiving activity', async () => {
   const env = await environment();
   const { document } = env;
   const main = document.querySelector('main');
@@ -727,6 +761,6 @@ test('starting a new response does not mistake a remounted previous answer for n
   fresh.append(freshText);
   main.append(fresh);
   env.advance();
-  assert.equal(document.documentElement.getAttribute('data-cd-activity'), 'receiving', 'A different answer identity can receive content equal in length to the previous answer');
+  assert.equal(document.documentElement.getAttribute('data-cd-activity'), 'working', 'Answer identity or text does not distinguish hidden processing from receiving');
   env.context.CyberdeckRuntime.destroy();
 });

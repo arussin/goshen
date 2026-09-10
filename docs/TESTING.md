@@ -1,6 +1,32 @@
 # Compatibility and release verification
 
-The current candidate is **0.3.5**. All **153 automated checks**, package validation, and the four-job GitHub CI run pass. The installed Chrome build completed the ChatGPT checks and the ordinary-page activation, navigation, cached-page reactivation, form, color, and HOPPER checks below. Remaining checks are recorded separately. The reported Gmail Chat freeze/blank view remains unresolved.
+## 0.3.6 privacy candidate
+
+The store currently distributes **0.3.5**. The **0.3.6** candidate removes prompt/conversation text inspection, retains optional cross-site following, and adds explicit global removal of optional website access.
+
+Local validation on September 10, 2026: **189 tests — 188 passed, one Windows-specific filename test skipped, zero failures.** All 17 extension files pass package validation. GitHub CI and exact ZIP checks are recorded with the candidate pull request.
+
+Automated coverage includes throwing getters for prompt and response text during startup and later events, generic companion reactions, popup removal feedback, narrower site grants, grant-enumeration failure, required ChatGPT access, delayed permission prompts, stale Follow requests, session restoration, and the existing navigation/OFF boundaries. The release verifier tests exact ZIP/directory equality and rejects changed, extra, missing, linked, or unsupported files.
+
+**Installed-browser verification of 0.3.6 is pending.** The historical 0.3.5 results below do not establish that this candidate or its ZIP passed Chrome installation, permission-prompt, or live ChatGPT checks. Refresh open pages after updating to replace earlier injected scripts.
+
+Before releasing 0.3.6, extract its final ZIP to a new directory, load that directory in Chrome, and record:
+
+- [ ] ChatGPT startup, navigation, editable composer, visible generation controls, working/ready transitions, generic HOPPER reactions, and quips/motion disabled.
+- [ ] Current-tab themes, same-origin reload/navigation, cross-site Follow, separate-tab isolation, OFF, cached-page restoration, and tab closure.
+- [ ] Permission grant, denial and retry with the popup open and closed; delayed grants must not undo OFF or global removal.
+- [ ] Global removal with two followed tabs, broad grants, and a single-site grant. Verify optional site access is removed and required ChatGPT access remains.
+- [ ] A new deliberate Follow grant after removal, plus worker restart and update with existing tabs.
+- [ ] Popup layout, readable success/failure feedback, and all controls fitting or scrolling.
+- [ ] Exact candidate ZIP reproduction, source-file verification, and configured GitHub CI.
+
+Keep the existing Gmail Chat, Adobe-panel, first-paint, embedded-content, and broader ChatGPT limitations until separately verified. See [source/package verification](VERIFYING.md), [PRIVACY.md](../PRIVACY.md), and the [store guide](WEB-STORE.md).
+
+## Historical 0.3.5 evidence
+
+The following version-specific record is retained as release history.
+
+The previously tested candidate was **0.3.5**. All **153 automated checks**, package validation, and the four-job GitHub CI run pass. The installed Chrome build completed the ChatGPT checks and the ordinary-page activation, navigation, cached-page reactivation, form, color, and HOPPER checks below. Remaining checks are recorded separately. The reported Gmail Chat freeze/blank view remains unresolved.
 
 For the 2026-09-08 installed check, the unpacked extension folder was reloaded and its runtime reported version **0.3.5**. The release ZIP was verified separately; this was not a fresh installation from that ZIP.
 
@@ -63,7 +89,7 @@ In one controlled installed 0.3.5 **Slow-DOM check** on 2026-09-08, the fixture 
 
 The fictional mail benchmark previously themed 504 rows and 6,003 icon paths in 796ms, sampled every 250ms, while typing remained usable. It recorded a 3.2ms maximum scan slice, 25ms maximum additional UI-heartbeat delay, and no scanner errors. These are one local Chromium run's measurements, not performance guarantees or proof about an actual inbox. Re-run the fixture on the release candidate rather than treating those numbers as a threshold.
 
-## Current release gates
+## Historical 0.3.5 release gates
 
 - [x] Run the complete automated suite and package validation for 0.3.5: 153 passed, no failures or skips; 17 extension files validated.
 - [x] Verify the reloaded unpacked 0.3.5 runtime on ChatGPT: completed response, working-to-ready activity, editable composer, native menu, and one stable terminal shell.

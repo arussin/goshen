@@ -81,20 +81,30 @@ test('idle dialogue remains independent of animation and can be silenced', () =>
   assert.equal(hopper.frame({ now: 88000, motion: true, quips: false }).quip, '');
 });
 
-test('quips are sparse, can be hidden, and react to categories without echoing private input', () => {
+test('quips are sparse, can be hidden, and preserve send reactions through activity changes', () => {
   const hopper = companion();
   const first = hopper.frame({ now: 0 });
   assert.equal(hopper.frame({ now: 21999 }).quip, first.quip);
   assert.notEqual(hopper.frame({ now: 22000 }).quip, first.quip);
-  hopper.react('sent', 23000, 'code');
-  const coding = hopper.frame({ now: 23001, activity: 'working' });
-  assert.match(coding.quip, /bugs/);
+  hopper.react('sent', 23000);
+  const sent = hopper.frame({ now: 23001, activity: 'working' });
+  assert.equal(sent.quip, 'Your signal is out in the neon.');
   assert.equal(hopper.frame({ now: 23002, activity: 'working', quips: false }).quip, '');
-  const privateText = '<script>secret conversation 7942</script>';
-  hopper.react('sent', 26000, privateText);
-  const arbitrary = hopper.frame({ now: 26001, activity: 'typing', topic: privateText });
-  assert.ok(!JSON.stringify(arbitrary).includes(privateText));
-  assert.ok(!JSON.stringify(arbitrary).includes('7942'));
+  assert.notEqual(hopper.frame({ now: 26000, activity: 'typing' }).quip, sent.quip);
+});
+
+test('companion does not inspect legacy topic metadata or vary dialogue with it', () => {
+  const hopper = companion();
+  const typing = hopper.frame({
+    now: 1,
+    activity: 'typing',
+    get topic() { throw new Error('Content metadata must not be read'); },
+  });
+  assert.equal(typing.quip, 'Ears up. Take your time.');
+  const baseline = companion();
+  baseline.react('sent', 2);
+  hopper.react('sent', 2, 'code');
+  assert.equal(hopper.frame({ now: 3 }).quip, baseline.frame({ now: 3 }).quip);
 });
 
 test('companion state is isolated and resets reproducibly without ambient browser APIs', () => {
@@ -106,6 +116,6 @@ test('companion state is isolated and resets reproducibly without ambient browse
   assert.equal(two.frame({ now: 2 }).mood, 'idle');
   one.reset(0);
   assert.equal(JSON.stringify(one.frame({ now: 2 })), JSON.stringify(two.frame({ now: 2 })));
-  one.react('unknown', 100, 'secret');
+  one.react('unknown', 100);
   assert.equal(one.frame({ now: 3, activity: 'unrecognized' }).mood, 'idle');
 });
