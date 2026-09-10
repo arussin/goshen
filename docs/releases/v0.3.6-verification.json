@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "version": "0.3.6",
+  "recordedAt": "2026-09-10",
+  "sourceRepository": "https://github.com/arussin/goshen",
+  "sourceCommit": "2ec398f61b122e0d7fb7e956c1cb951e7d791f34",
+  "mergeCommit": "582dff383a237c00d6db1f6c7adc69411a19eb6f",
+  "pullRequest": "https://github.com/arussin/goshen/pull/1",
+  "archive": {
+    "name": "Goshen-Terminal-0.3.6.zip",
+    "bytes": 201140,
+    "sha256": "f1cf9bdc85de1c43056327194b352ae70bce47d19b6b2d6e9dfad51e717ca522"
+  },
+  "verification": "The reproducible upload ZIP and its extracted directory match all 17 extension files plus LICENSE. All 18 packaged files were independently compared with their exact GitHub Git blob hashes at the source commit.",
+  "tests": {
+    "localTotal": 189,
+    "localPassed": 188,
+    "localSkipped": 1,
+    "localFailed": 0,
+    "githubChecksPassed": 8,
+    "installedChrome": "Unverified; the maintainer explicitly approved merge and submission with these checks outstanding on September 10, 2026."
+  },
+  "store": {
+    "itemId": "jlhlihmmbllkllglociipkhafbpmhcle",
+    "submittedVersion": "0.3.6",
+    "statusAtRecord": "Pending review",
+    "automaticPublication": false,
+    "publishedVersionAtRecord": "0.3.5"
+  },
+  "limitations": [
+    "This verifies the upload ZIP, not a downloaded Chrome Web Store CRX or installed extension.",
+    "Hashes establish byte identity with trusted expected values; they do not prove safe behavior.",
+    "Installed Chrome checks remain unverified; no skipped manual check is counted as passed."
+  ],
+  "files": [
+    {
+      "path": "LICENSE",
+      "bytes": 1061,
+      "sha256": "0ae8ac1a6213116919ae6372b37cc2a44b002586aca550dda8da76a9852f5075"
+    },
+    {
+      "path": "background.js",
+      "bytes": 32181,
+      "sha256": "81d1c2cb74cf3ed118b45e60e19f48599e7808652517dede956fc7d2278567a8"
+    },
+    {
+      "path": "companion.js",
+      "bytes": 8037,
+      "sha256": "e206efa4e04089b4205c8deeb300bc41b40b64a68383f604c6f976128d2a0409"
+    },
+    {
+      "path": "content.css",
+      "bytes": 24363,
+      "sha256": "d420fca3da48dd2682a3b59b7e3a778a7d927eb5e978b94c414a0c1463da786c"
+    },
+    {
+      "path": "content.js",
+      "bytes": 33819,
+      "sha256": "22a282b9d920ce03873f6c54ef88bd2c4dea9adffb1a930fe9e6f15b7004eaf0"
+    },
+    {
+      "path": "gmail.js",
+      "bytes": 5223,
+      "sha256": "dd70fa378c3e2fd49d989dbcaeea9a9813ec8aedd92595a84af083bd25a08176"
+    },
+    {
+      "path": "icons/icon-128.png",
+      "bytes": 4313,
+      "sha256": "6be8113c64333cc6293faf27feb4a44839c82f25eb98240f1b5ac66abe8a8819"
+    },
+    {
+      "path": "icons/icon-16.png",
+      "bytes": 169,
+      "sha256": "5a10f5d4d6176d344f8e97562bac2f707247245f440dc7b27350475edc073a31"
+    },
+    {
+      "path": "icons/icon-32.png",
+      "bytes": 377,
+      "sha256": "5d81b039db299742eb30217c396fe31c761c46ae15b4467ff0b6a516428bbf1d"
+    },
+    {
+      "path": "icons/icon-48.png",
+      "bytes": 713,
+      "sha256": "99a66fdf364ed31bfea999f285a68430087cd85088072040e11814a20d136978"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 1128,
+      "sha256": "e18480cc3337785f61a8e07f3227a543c80388ed0dc04d982918983cfa4ef034"
+    },
+    {
+      "path": "popup.css",
+      "bytes": 9710,
+      "sha256": "f2af6476fdb300acfc05915639df2c4480822fdd9c2f5d429a9bfa750fa82da8"
+    },
+    {
+      "path": "popup.html",
+      "bytes": 7172,
+      "sha256": "fe0cefa06abc038b413268aa2195a35d412072ba0a26454e65e8a289cb7a4340"
+    },
+    {
+      "path": "popup.js",
+      "bytes": 15701,
+      "sha256": "35da056569596e02b4a22e0ea1929154d966906eadbde2b8b35abbe0953e13ff"
+    },
+    {
+      "path": "settings.js",
+      "bytes": 4422,
+      "sha256": "0813a0c727b697947d74bf234a040461644f74f7962f9b1b829a9928f90d7737"
+    },
+    {
+      "path": "sites.js",
+      "bytes": 1507,
+      "sha256": "01c07a413fb0903f2fb51c5a972c833f000ede29f409ac877420402f9712a77d"
+    },
+    {
+      "path": "universal.css",
+      "bytes": 6140,
+      "sha256": "c02b868b74ccddc46495629de79f87b4e4f276722ce510df0a015bbdc708e392"
+    },
+    {
+      "path": "universal.js",
+      "bytes": 43286,
+      "sha256": "49d72861047e6abaf7cc4c736d50170cd5dfd9214592ca0de5dbc51dbc1c0829"
+    }
+  ]
+}

@@ -1,12 +1,12 @@
 # Chrome Web Store release guide
 
-## 0.3.6 privacy candidate — not submitted
+## 0.3.6 privacy update — submitted for review
 
 The store currently distributes **0.3.5**. The candidate retains optional cross-site following, removes prompt and answer-text inspection, and adds **REMOVE CROSS-SITE ACCESS**. Automatic ChatGPT styling and ordinary per-tab themes remain available. HOPPER keeps generic event reactions; keyword-specific remarks and response-length-based activity are removed.
 
-Complete the candidate checks in [TESTING.md](TESTING.md), including an installed copy extracted from the exact ZIP, before uploading 0.3.6. Preserve the existing 0.3.5 ZIP. Reproduce the candidate ZIP twice, compare it with [the verifier](VERIFYING.md), and record the final source commit and SHA-256. The [0.3.5 verification record](releases/v0.3.5-verification.json) connects its preserved upload ZIP to exact source bytes; it does not verify Google's installed build.
+The 0.3.6 ZIP was reproduced twice and passed strict archive and extracted-directory checks. All 18 packaged files match source commit `2ec398f61b122e0d7fb7e956c1cb951e7d791f34`. Its SHA-256 is `f1cf9bdc85de1c43056327194b352ae70bce47d19b6b2d6e9dfad51e717ca522`; see the [verification record](releases/v0.3.6-verification.json) and [verifier guide](VERIFYING.md). The original 0.3.5 ZIP is preserved. These checks do not establish equality with Google's installed build.
 
-The separately saved 0.3.5 description edit adds only the MIT/open-source disclosure and source links. A saved dashboard draft is not a submitted or published listing change.
+**Status recorded September 10, 2026:** PR #1 was merged, and the 0.3.6 package, open-source/GitHub listing text, privacy disclosures, and reviewer instructions were submitted to Google. The dashboard confirms **Pending review**, with automatic publication disabled. The store still distributes **0.3.5**. Installed Chrome checks remain unverified; the maintainer explicitly approved proceeding with that limitation, recorded in [TESTING.md](TESTING.md). The submitted description links the [immutable package source](https://github.com/arussin/goshen/tree/2ec398f61b122e0d7fb7e956c1cb951e7d791f34), and the privacy URL points to the policy at the same commit. The preparation notes below describe the applied changes.
 
 ### Candidate description additions and replacement
 

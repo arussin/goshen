@@ -1,6 +1,6 @@
 # Goshen Terminal privacy
 
-**Version scope:** This policy describes the 0.3.6 development candidate. For the currently published 0.3.5 release, see the [versioned privacy policy](https://github.com/arussin/goshen/blob/v0.3.5/PRIVACY.md).
+**Version scope:** This policy describes the 0.3.6 source submitted for Chrome Web Store review. The store currently distributes 0.3.5; see its [versioned privacy policy](https://github.com/arussin/goshen/blob/v0.3.5/PRIVACY.md).
 
 Goshen Terminal changes the appearance of browser pages locally. It does not operate a server, send analytics, or transmit page content.
 

@@ -1,6 +1,6 @@
 # Compatibility and release verification
 
-## 0.3.6 privacy candidate
+## 0.3.6 privacy update — submitted for review
 
 The store currently distributes **0.3.5**. The **0.3.6** candidate removes prompt/conversation text inspection, retains optional cross-site following, and adds explicit global removal of optional website access.
 
@@ -8,9 +8,9 @@ Local validation on September 10, 2026: **189 tests — 188 passed, one Windows-
 
 Automated coverage includes throwing getters for prompt and response text during startup and later events, generic companion reactions, popup removal feedback, narrower site grants, grant-enumeration failure, required ChatGPT access, delayed permission prompts, stale Follow requests, session restoration, and the existing navigation/OFF boundaries. The release verifier tests exact ZIP/directory equality and rejects changed, extra, missing, linked, or unsupported files.
 
-**Installed-browser verification of 0.3.6 is pending.** The historical 0.3.5 results below do not establish that this candidate or its ZIP passed Chrome installation, permission-prompt, or live ChatGPT checks. Refresh open pages after updating to replace earlier injected scripts.
+**Installed-browser verification of 0.3.6 remains unverified.** On September 10, 2026, the maintainer explicitly approved merging PR #1 and submitting 0.3.6 despite the outstanding installed Chrome checks. This waives the gate for this submission; it does not count any unperformed check as passed. The historical 0.3.5 results below do not establish that 0.3.6 or its ZIP passed installation, permission prompts/removal, navigation, popup, ChatGPT, or existing-tab update checks. Refresh open pages after updating to replace earlier injected scripts.
 
-Before releasing 0.3.6, extract its final ZIP to a new directory, load that directory in Chrome, and record:
+Outstanding installed-browser checks: extract the final 0.3.6 ZIP to a new directory, load it in Chrome, and record:
 
 - [ ] ChatGPT startup, navigation, editable composer, visible generation controls, working/ready transitions, generic HOPPER reactions, and quips/motion disabled.
 - [ ] Current-tab themes, same-origin reload/navigation, cross-site Follow, separate-tab isolation, OFF, cached-page restoration, and tab closure.
@@ -18,7 +18,7 @@ Before releasing 0.3.6, extract its final ZIP to a new directory, load that dire
 - [ ] Global removal with two followed tabs, broad grants, and a single-site grant. Verify optional site access is removed and required ChatGPT access remains.
 - [ ] A new deliberate Follow grant after removal, plus worker restart and update with existing tabs.
 - [ ] Popup layout, readable success/failure feedback, and all controls fitting or scrolling.
-- [ ] Exact candidate ZIP reproduction, source-file verification, and configured GitHub CI.
+- [x] Exact candidate ZIP reproduction, source-file verification, and configured GitHub CI. The ZIP and extracted directory match all 18 packaged files at source commit `2ec398f61b122e0d7fb7e956c1cb951e7d791f34`; all eight checks across the push/PR runs passed. See the [0.3.6 verification record](releases/v0.3.6-verification.json).
 
 Keep the existing Gmail Chat, Adobe-panel, first-paint, embedded-content, and broader ChatGPT limitations until separately verified. See [source/package verification](VERIFYING.md), [PRIVACY.md](../PRIVACY.md), and the [store guide](WEB-STORE.md).
 

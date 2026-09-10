@@ -22,7 +22,7 @@ Turn familiar websites into a vintage terminal, with phosphor colors, glowing in
 
 These screenshots use fictional demo content and the extension's maximum settings: **Scanlines 40** and **Glow 60**.
 
-**Development candidate: 0.3.6.** This branch removes prompt/conversation text inspection and adds explicit removal of optional cross-site access. The store release remains 0.3.5 until the candidate's release checks and review are complete. After updating, refresh open pages so they use the new page scripts.
+**0.3.6 submitted for Chrome Web Store review.** This version removes prompt/conversation text inspection and adds explicit removal of optional cross-site access. The store still distributes 0.3.5, and automatic publication of the update is disabled. The maintainer explicitly approved proceeding with installed Chrome checks unverified; see [the verification record](docs/TESTING.md). After updating, refresh open pages so they use the new page scripts.
 
 ## Make it yours
 
