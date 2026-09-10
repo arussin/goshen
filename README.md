@@ -4,7 +4,9 @@
 
 Turn familiar websites into a vintage terminal, with phosphor colors, glowing instrument panels, and a resident pixel rabbit named HOPPER. ChatGPT gets a dedicated terminal layout; other websites keep their own layout under the theme.
 
-**Early preview for Chrome.** The extension is not yet available in the Chrome Web Store. You can install the preview manually using the steps below.
+**Early preview for Chrome.** [Install Goshen Terminal from the Chrome Web Store](https://chromewebstore.google.com/detail/jlhlihmmbllkllglociipkhafbpmhcle).
+
+**0.3.5 · Free · Unlisted · Published September 10, 2026.** The unlisted extension is available through the direct link above.
 
 ![Amber terminal layout, with a conversation frame, HOPPER, and light panels](docs/images/chatgpt-preview.jpg)
 
@@ -33,6 +35,12 @@ HOPPER's quips are prewritten, and its activity lights are decorative. They do n
 ## Install the preview
 
 Requires **Chrome 106 or newer**.
+
+1. Open [Goshen Terminal in the Chrome Web Store](https://chromewebstore.google.com/detail/jlhlihmmbllkllglociipkhafbpmhcle) and choose **Add to Chrome**.
+2. Pin **Goshen Terminal** from Chrome's Extensions menu.
+3. Refresh an existing ChatGPT tab, or open the extension popup on another website and choose **TERMINAL ON**.
+
+### Manual installation for development
 
 1. Download or clone this repository and keep its `extension` folder somewhere permanent.
 2. Open `chrome://extensions` in Chrome and turn on **Developer mode**.
