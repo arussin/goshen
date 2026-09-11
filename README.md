@@ -1,95 +1,59 @@
-# Goshen Terminal · GT—01
+# Goshen Terminal
 
-*Cyberdeck vibes for ChatGPT and the tabs you choose — just for fun.*
+A vintage terminal theme for ChatGPT and the browser tabs you choose, with phosphor colors and a pixel rabbit named HOPPER. ChatGPT gets a dedicated layout; other websites keep their own layout.
 
-Turn familiar websites into a vintage terminal, with phosphor colors, glowing instrument panels, and a resident pixel rabbit named HOPPER. ChatGPT gets a dedicated terminal layout; other websites keep their own layout under the theme.
+**[Install Goshen Terminal for Chrome](https://adamrussin.com/goshen)** · Free · Chrome 106 or newer
 
-**Early preview for Chrome.** [Install Goshen Terminal from the Chrome Web Store](https://adamrussin.com/goshen).
+![ChatGPT in the amber theme with the conversation panel and HOPPER](docs/images/chatgpt-preview.jpg)
 
-**0.3.5 · Free · Unlisted · Published September 10, 2026.** The unlisted extension is available through the direct link above.
+![A website in the green theme with HOPPER in a floating window](docs/images/universal-preview.jpg)
 
-![Amber terminal layout, with a conversation frame, HOPPER, and light panels](docs/images/chatgpt-preview.jpg)
+![An inbox in the amber theme with navigation and message rows](docs/images/mail-preview.jpg)
 
-**Your conversation, on a different frequency.** ChatGPT gets its own terminal frame, instrument rail, and animated response indicators.
+## Get started
 
-![Green terminal theme on a fictional art gallery, with a floating HOPPER window](docs/images/universal-preview.jpg)
+1. Open the [Chrome Web Store listing](https://adamrussin.com/goshen) and choose **Add to Chrome**.
+2. Pin **Goshen Terminal** from Chrome's Extensions menu.
+3. Refresh an open ChatGPT tab. On another website, open the extension and choose **TERMINAL ON**.
 
-**Take the terminal with you.** Turn the terminal on for a tab, choose its phosphor color, and give HOPPER a place on your screen.
-
-![Amber terminal theme on a fictional inbox with distinct read, unread, and selected rows](docs/images/mail-preview.jpg)
-
-**A little order in the inbox.** The Gmail treatment gives navigation, search, and message rows distinct surfaces. This screenshot uses fictional mail.
-
-These screenshots use fictional demo content and the extension's maximum settings: **Scanlines 40** and **Glow 60**.
-
-**0.3.6 submitted for Chrome Web Store review.** This version removes prompt/conversation text inspection and adds explicit removal of optional cross-site access. The store still distributes 0.3.5, and automatic publication of the update is disabled. The maintainer explicitly approved proceeding with installed Chrome checks unverified; see [the verification record](docs/TESTING.md). After updating, refresh open pages so they use the new page scripts.
+The Chrome Store currently has **0.3.5**. The **0.3.6** source includes an upcoming privacy update that removes prompt-text inspection and adds **REMOVE CROSS-SITE ACCESS**.
 
 ## Make it yours
 
-- Choose **amber, green, or ice**, then adjust glow, scanlines, and text size.
-- Keep the full ChatGPT instrument rail or switch to a focused conversation layout.
-- Use **TERMINAL COLORS** on other websites, or **FRAME ONLY** to keep their original colors and fonts.
-- Watch HOPPER idle, blink, and react to typing and visible activity. Click the rabbit for a headpat.
-- Turn ambient animation and rabbit quips on or off independently, or follow your system's reduced-motion preference.
+In the extension popup:
 
-HOPPER's quips are prewritten, and its activity lights are decorative. They do not reveal hidden AI reasoning or measure response progress.
+- Choose **amber, green, or ice**, and adjust glow and scanlines.
+- Use the full ChatGPT layout or switch to **FOCUS** to hide the instrument rail.
+- Choose **TERMINAL COLORS** on other websites, or **FRAME ONLY** to keep their colors and fonts.
+- Adjust **ChatGPT text size**. It works reliably on ChatGPT; results on other websites vary.
+- Turn animations and rabbit quips on or off, or follow your system's reduced-motion preference.
 
-## Install the preview
+On other websites, drag HOPPER's title bar to move the window or its lower-right corner to resize it. HOPPER's preset reactions and activity lights are decorative.
 
-Requires **Chrome 106 or newer**.
+## Keep it on as you browse
 
-1. Open [Goshen Terminal in the Chrome Web Store](https://adamrussin.com/goshen) and choose **Add to Chrome**.
-2. Pin **Goshen Terminal** from Chrome's Extensions menu.
-3. Refresh an existing ChatGPT tab, or open the extension popup on another website and choose **TERMINAL ON**.
+The terminal stays with an activated tab through reloads and same-site navigation. **TERMINAL OFF** restores the page. Turning it off or closing the tab clears its activation.
 
-### Manual installation for development
+Enable **Follow this tab across sites** to keep it on across websites. Chrome asks for access to all websites: a broad permission, although Goshen follows only tabs you explicitly enable.
 
-1. Download or clone this repository and keep its `extension` folder somewhere permanent.
-2. Open `chrome://extensions` in Chrome and turn on **Developer mode**.
-3. Choose **Load unpacked** and select the `extension` folder containing `manifest.json`.
-4. Pin **Goshen Terminal** from Chrome's Extensions menu.
-5. Refresh an existing ChatGPT tab, or open the extension popup on another website and choose **TERMINAL ON**.
+Turning Follow off stops that tab's following but leaves Chrome's permission in place. In 0.3.6, **REMOVE CROSS-SITE ACCESS** revokes optional website access for every tab. Automatic ChatGPT access is separate. If access is paused, reopen the popup and choose **ALLOW WEBSITE ACCESS**.
 
-If you have a packaged extension ZIP, extract it first and select the extracted folder containing `manifest.json`. To update an unpacked installation, replace its files, click **Reload** on Chrome's extensions page, and refresh your tabs.
+## Privacy and source verification
 
-## Using the terminal
+Goshen processes pages locally, with no analytics, remote code, or page-content uploads. Preferences stay on your device; active tab records last only for the browser session. Website access can include sensitive pages, so grant cross-site access only if you need it. See the [privacy policy](PRIVACY.md) for each version's behavior.
 
-ChatGPT is styled automatically while **Automatic on ChatGPT** is enabled. Use the extension popup or **TUNE TERMINAL** to adjust its appearance.
+The extension runs the JavaScript and CSS in this repository directly. The [verification guide](docs/VERIFYING.md) shows how to compare the files installed in Chrome with the source and reproduce the release ZIP checksum.
 
-On other websites, the terminal belongs to the tab you activate. It stays with that tab through reloads and navigation within the same site. Turning it off restores the page and clears that tab's activation. Closing the tab also clears it.
+## Install from source
 
-**Follow this tab across sites** is optional. Chrome asks for broader website access before it can work. That permission applies across Chrome, but the terminal still follows only the individual tabs where you enable the option. If access is paused, reopen the popup and choose **ALLOW WEBSITE ACCESS** to retry. Turning Follow off stops that tab's following but leaves Chrome's permission in place. In 0.3.6, **REMOVE CROSS-SITE ACCESS** revokes the optional grant for every tab; automatic ChatGPT access is separate.
+Download or clone this repository. At `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select the `extension` folder containing `manifest.json`.
 
-In universal mode, drag HOPPER's title bar to move the window or its lower-right grip to resize it. Both controls also support arrow keys, **Shift** for larger steps, and **Home** to reset. Position and size last for the current page only.
+After replacing an unpacked installation's files, click **Reload** on Chrome's extensions page, then refresh your browser tabs. Refreshing a webpage alone does not reload the extension.
 
-## Compatibility
+## Known limitations
 
-This is an early preview, and websites can have styling that conflicts with the theme. If a page looks wrong, try **FRAME ONLY** or **TERMINAL OFF**. Reloading alone may reapply an active theme.
+Some websites have conflicting styles, imperfect contrast, or a brief light background while loading. Try **FRAME ONLY** or **TERMINAL OFF** if a page looks wrong. Chrome's internal pages, the Web Store, extension pages, and local files are unsupported. Embedded Gmail Chat has a reported freeze or blank-view issue.
 
-- A page may briefly show its native white or light background while loading, before the theme can be applied.
-- Dark logos and colored text can have imperfect contrast. Images, canvas interfaces, embedded media, and some isolated page components retain their native appearance.
-- Chrome's internal pages, the Chrome Web Store, extension pages, and local files cannot use universal mode.
-- Embedded Gmail Chat has an unresolved freeze/blank-view report; its responsiveness is not verified.
-- ChatGPT voice, uploads, canvas, and every native menu are not comprehensively covered.
+[Report a problem](https://github.com/arussin/goshen/issues) with the site, Chrome version, and steps to reproduce it. Remove private information from screenshots. See [compatibility notes](docs/TESTING.md) and [contributing](CONTRIBUTING.md) for more detail.
 
-See the [compatibility and verification matrix](docs/TESTING.md) for the published release's tested scope and the 0.3.6 candidate's outstanding installed-browser checks.
-
-## Verify the source and package
-
-Goshen runs packaged JavaScript and CSS directly, with no compiler or minifier. See [source and package verification](docs/VERIFYING.md) for reproducible ZIP checksums and a local file comparison. Matching hashes establish byte identity, not proof that software is safe.
-
-## Privacy
-
-The extension runs locally, with no analytics, remote code, API keys, or conversation archive. Appearance preferences stay on your device. Active tab IDs, origins, and follow choices stay in session memory; full page addresses and conversation text are not saved. See [PRIVACY.md](PRIVACY.md) for the exact page access and storage behavior.
-
-## Feedback and contributions
-
-Found a page that needs attention? [Report an issue](https://github.com/arussin/goshen/issues) with the site, Chrome version, and steps to reproduce it. Remove account information and private content from screenshots.
-
-[Contributing](CONTRIBUTING.md) covers local development and release checks. The [architecture](docs/ARCHITECTURE.md) and [design notes](DESIGN.md) describe how it works; [SECURITY.md](SECURITY.md) explains security reporting.
-
-## License
-
-Copyright 2026 Adam. Distributed under the [MIT License](LICENSE).
-
-Goshen Terminal is independent of OpenAI and Google. ChatGPT and Chrome are trademarks of their respective owners.
+Released under the [MIT License](LICENSE). Independent of OpenAI and Google.
