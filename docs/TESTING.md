@@ -1,6 +1,16 @@
 # Compatibility and release verification
 
-## 0.3.6 privacy update — submitted for review
+## 0.3.7 access-controls fix — prepared for upload
+
+Fixes a fresh Follow permission grant being mistaken for an old grant after access removal, startup status cancellation, and an unserializable Chrome script argument. The text-size control is labeled for ChatGPT. Privacy behavior and permissions are unchanged from the 0.3.6 source.
+
+September 11, 2026: **194 local tests — 193 passed, one Windows-specific filename test skipped, zero failures.** All four Windows/Linux Node 20/22 CI jobs passed. The deterministic ZIP was rebuilt identically; every packaged file matches the public source. See the [0.3.7 verification record](releases/v0.3.7-verification.json) for source, hashes, and CI links.
+
+Regression cases include removing access then re-enabling Follow while a new grant overtakes the tab lookup; startup cleanup and status; failed or wrong-tab requests; and a later OFF or global removal superseding earlier work. The maintainer reported the fixes were all set and authorized upload. This is not an agent-run installed-browser check of the final versioned ZIP. Existing compatibility limitations remain.
+
+## Historical 0.3.6 evidence
+
+### 0.3.6 privacy update — status recorded September 10
 
 The store currently distributes **0.3.5**. The **0.3.6** candidate removes prompt/conversation text inspection, retains optional cross-site following, and adds explicit global removal of optional website access.
 

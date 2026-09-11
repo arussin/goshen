@@ -1,6 +1,14 @@
 # Chrome Web Store release guide
 
-## 0.3.6 privacy update — submitted for review
+## 0.3.7 access-controls fix — prepared for upload
+
+The final package is `Goshen-Terminal-0.3.7.zip` (203004 bytes), with SHA-256 `89fb9dccb5f2abe53f4fdcb54400b5a68bc2ac5998c96707ed483bd5085d8318`. Source: [`b16111e8425bc9e9fa15d0bbe6224a8c247449a2`](https://github.com/arussin/goshen/tree/b16111e8425bc9e9fa15d0bbe6224a8c247449a2). All 18 packaged files match that source. See the [release notes](releases/v0.3.7.md) and [verification record](releases/v0.3.7-verification.json).
+
+Prepared September 11, 2026 after maintainer approval. GitHub source and CI are complete. Chrome Web Store upload is awaiting publisher Google sign-in. Use the existing item, replace the pending 0.3.6 candidate with 0.3.7, and keep automatic publication disabled. The existing 0.3.5 published version is unaffected while review is pending.
+
+## Historical 0.3.6 submission
+
+### 0.3.6 privacy update — status recorded September 10
 
 The store currently distributes **0.3.5**. The candidate retains optional cross-site following, removes prompt and answer-text inspection, and adds **REMOVE CROSS-SITE ACCESS**. Automatic ChatGPT styling and ordinary per-tab themes remain available. HOPPER keeps generic event reactions; keyword-specific remarks and response-length-based activity are removed.
 
