@@ -251,6 +251,39 @@ test('explicit global removal goes through the worker and reports success only a
   assert.deepEqual(saves, []);
 });
 
+test('an older worker cannot confirm removal, and reloading it allows a later retry', async () => {
+  for (const missingReply of [undefined, null]) {
+    let reloaded = false;
+    const env = harness({ handler: message => {
+      if (message.type === 'goshen:remove-cross-site-access') {
+        return reloaded
+          ? { ok: true, crossSiteAccessRemoved: true, followPermissionGranted: false, crossSiteAccessGranted: false }
+          : missingReply;
+      }
+      // Older workers still answer status and ordinary tab commands, but do
+      // not recognize the new global-removal command or its status field.
+      return { ok: true, tabId: 41, host: 'example.org', mode: 'universal', enabled: true, persistent: true, followCrossSite: true, followPermissionGranted: true };
+    } });
+    await settle();
+    env.nodes.get('remove-cross-site-access').fire('click');
+    await settle();
+    assert.equal(env.nodes.get('page-notice').hidden, true);
+    assert.equal(env.nodes.get('page-error-message').textContent, 'Chrome did not confirm access removal. Reload Goshen Terminal at chrome://extensions, then reopen this panel and try again.');
+    assert.equal(env.nodes.get('follow-tab').checked, true);
+    assert.equal(env.nodes.get('remove-cross-site-access').hidden, false);
+    assert.equal(env.nodes.get('remove-cross-site-access').disabled, false);
+    assert.deepEqual(env.messages, ['goshen:status', 'goshen:remove-cross-site-access', 'goshen:status']);
+    assert.deepEqual(env.permissionRequests, []);
+    reloaded = true;
+    env.nodes.get('remove-cross-site-access').fire('click');
+    await settle();
+    assert.equal(env.nodes.get('page-error').hidden, true);
+    assert.equal(env.nodes.get('page-notice').hidden, false);
+    assert.equal(env.nodes.get('follow-tab').checked, false);
+    assert.equal(env.nodes.get('remove-cross-site-access').hidden, true);
+  }
+});
+
 test('failed global removal refreshes actual status while preserving the worker error', async () => {
   let attempted = false;
   const { nodes, packets } = harness({ handler: message => {

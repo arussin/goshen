@@ -482,7 +482,7 @@
     shell = document.createElement('div');
     shell.id = 'cd-shell';
     shell.className = 'cd-shell';
-    shell.dataset.version = '0.3.6';
+    shell.dataset.version = '0.3.7';
     shell.innerHTML = `
       <header class="cd-topbar">
         <div class="cd-brand"><span class="cd-brand-icon" aria-hidden="true">▥</span><span class="cd-brand-name">TERMINAL</span><span class="cd-model">GT—01</span></div>

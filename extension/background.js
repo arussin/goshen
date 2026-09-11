@@ -5,6 +5,7 @@ importScripts('sites.js', 'settings.js');
 
 const tabOperations = new Map();
 const commands = new Set(['goshen:status', 'goshen:enable', 'goshen:disable', 'goshen:follow', 'goshen:remove-cross-site-access']);
+const pendingFollowRequests = new Set();
 const SESSION_KEY = 'goshen.tab-intents';
 const REVOKED_KEY = 'goshen.cross-site-access-revoked';
 const FOLLOW_ORIGINS = ['http://*/*', 'https://*/*'];
@@ -188,12 +189,21 @@ function removeCrossSiteAccess() {
   return removalOperation;
 }
 
-void ready.then(async () => {
+async function settleFreshFollowRequests() {
+  while (crossSiteAccessRevoked && !removalOperation) {
+    const pending = [...pendingFollowRequests].filter(request => request.revision === accessRevision);
+    if (!pending.length) return;
+    await Promise.allSettled(pending.map(request => request.operation));
+  }
+}
+
+const startupAccessReady = ready.then(async () => {
   // Cover a delayed old grant that outlived the previous worker instance.
   // When nothing remains, avoid canceling the popup or same-site work just
   // because the service worker woke with its revocation marker still set.
   if (!crossSiteAccessRevoked) return;
   const origins = await grantedOptionalOrigins().catch(() => null);
+  await settleFreshFollowRequests();
   if (crossSiteAccessRevoked && (origins === null || origins.length)) return removeCrossSiteAccess();
 }).catch(() => {});
 
@@ -363,6 +373,14 @@ async function runOnTab(tab, command, { automatic = false, check = () => {}, pre
 
 async function control(message) {
   if (message.type === 'goshen:remove-cross-site-access') return removeCrossSiteAccess();
+  // The popup can wake a worker that still needs to finish an earlier
+  // revocation. Read status after that cleanup, not from a snapshot that the
+  // cleanup is about to cancel. Mutating commands retain their original
+  // cancellation boundary so a later OFF or revocation always wins.
+  if (message.type === 'goshen:status') {
+    await startupAccessReady;
+    if (removalOperation) await removalOperation.catch(() => {});
+  }
   const revision = accessRevision;
   const expectedGeneration = Number.isInteger(message.expectedTabId) ? generation(message.expectedTabId) : null;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -525,7 +543,12 @@ chrome.permissions.onAdded.addListener(permission => {
   if (!permission.origins?.length) return;
   if (permission.origins.every(origin => REQUIRED_ORIGINS.has(origin))) return;
   grantRevision++;
-  void ready.then(() => {
+  void ready.then(async () => {
+    // A new popup gesture dispatches Follow before Chrome opens its permission
+    // prompt, but the grant can beat the command's tab lookup. Let that trusted
+    // command validate and record its choice before treating the grant as old.
+    // Requests from before a later removal never delay that removal.
+    await settleFreshFollowRequests();
     if (crossSiteAccessRevoked || removalOperation) return removeCrossSiteAccess();
     for (const [id, intent] of intents) if (intent.followCrossSite) resumeTab(id);
   }).catch(() => {});
@@ -614,6 +637,13 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     respond({ ok: false, error: 'Open the extension popup to control this tab.' });
     return false;
   }
-  control(message).then(respond, error => respond({ ok: false, error: friendlyError(error) }));
+  const revision = accessRevision;
+  const operation = control(message);
+  if (message.type === 'goshen:follow' && message.followCrossSite === true) {
+    const request = { revision, operation };
+    pendingFollowRequests.add(request);
+    void operation.finally(() => pendingFollowRequests.delete(request)).catch(() => {});
+  }
+  operation.then(respond, error => respond({ ok: false, error: friendlyError(error) }));
   return true;
 });

@@ -1252,6 +1252,21 @@ test('a revoked worker with no optional access can answer its first popup reques
   assert.equal(env.state.permissionRemovals.length, 0);
 });
 
+test('the first popup status waits for startup revocation of leftover optional access', async () => {
+  const env = environment({
+    permissionGranted: true,
+    session: { 'goshen.cross-site-access-revoked': true, 'goshen.tab-intents': { 41: { origin: 'https://example.com', followCrossSite: true } } },
+  });
+  const status = await env.send('goshen:status');
+  assert.equal(status.ok, true, 'Startup permission cleanup must not cancel the popup that woke the worker');
+  assert.equal(status.followCrossSite, false);
+  assert.equal(status.followPermissionGranted, false);
+  assert.equal(status.crossSiteAccessGranted, false);
+  assert.equal(env.state.permissionRemovals.length, 1);
+  assert.equal(env.state.sessionData['goshen.tab-intents'][41].followCrossSite, false);
+  assert.equal(env.state.active, false);
+});
+
 test('a delayed old grant is removed again without reviving Follow, including after a worker restart', async () => {
   const env = environment({ permissionGranted: true });
   await env.send('goshen:enable');
@@ -1275,6 +1290,82 @@ test('a delayed old grant is removed again without reviving Follow, including af
   assert.equal(restarted.state.sessionData['goshen.cross-site-access-revoked'], true);
   assert.equal(restarted.state.sessionData['goshen.tab-intents'][41].followCrossSite, false);
   assert.deepEqual(restarted.state.calls, []);
+});
+
+test('a new Follow gesture after removal can receive its grant while tab lookup is pending', async () => {
+  const env = environment({ permissionGranted: true });
+  await env.send('goshen:enable');
+  assert.equal((await env.send('goshen:remove-cross-site-access')).ok, true);
+  const query = env.chrome.tabs.query;
+  let reached, release;
+  const entered = new Promise(resolve => { reached = resolve; });
+  const barrier = new Promise(resolve => { release = resolve; });
+  env.chrome.tabs.query = async options => {
+    const tabs = await query(options);
+    reached();
+    await barrier;
+    return tabs;
+  };
+  const following = env.send({ type: 'goshen:follow', followCrossSite: true, expectedTabId: 41 });
+  await entered;
+  // Chrome can grant access before the worker's active-tab query finishes.
+  env.grantAccess();
+  await settle();
+  release();
+  const result = await following;
+  await settle();
+  assert.equal(result.ok, true, 'The new gesture must not be mistaken for a delayed grant from before removal');
+  assert.equal(result.followCrossSite, true);
+  assert.equal(result.followPermissionGranted, true);
+  assert.equal(env.state.permissionRemovals.length, 1, 'Do not revoke the newly requested grant');
+  assert.equal(env.state.sessionData['goshen.cross-site-access-revoked'], false);
+  env.navigate('https://other.example/newly-authorized');
+  await settle();
+  assert.equal(env.state.active, true);
+});
+
+test('a fresh Follow command can wake a revoked worker without startup cleanup revoking its new grant', async () => {
+  const env = environment({
+    permissionGranted: true,
+    session: { 'goshen.cross-site-access-revoked': true, 'goshen.tab-intents': { 41: { origin: 'https://example.com', followCrossSite: false } } },
+  });
+  const result = await env.send({ type: 'goshen:follow', followCrossSite: true, expectedTabId: 41 });
+  await settle();
+  assert.equal(result.ok, true);
+  assert.equal(result.followCrossSite, true);
+  assert.equal(result.followPermissionGranted, true);
+  assert.equal(env.state.permissionRemovals.length, 0);
+  assert.equal(env.state.sessionData['goshen.cross-site-access-revoked'], false);
+});
+
+test('failed or superseded fresh Follow requests still lose a grant that arrives while they validate', async () => {
+  for (const superseding of ['wrong-tab', 'off', 'remove-again']) {
+    const env = environment({ permissionGranted: true });
+    await env.send('goshen:enable');
+    await env.send('goshen:remove-cross-site-access');
+    const query = env.chrome.tabs.query;
+    let reached, release, held = false;
+    const entered = new Promise(resolve => { reached = resolve; });
+    const barrier = new Promise(resolve => { release = resolve; });
+    env.chrome.tabs.query = async options => {
+      const tabs = await query(options);
+      if (!held) { held = true; reached(); await barrier; }
+      return tabs;
+    };
+    const following = env.send({ type: 'goshen:follow', followCrossSite: true, expectedTabId: superseding === 'wrong-tab' ? 42 : 41 });
+    await entered;
+    env.grantAccess();
+    await settle();
+    if (superseding === 'off') assert.equal((await env.send({ type: 'goshen:disable', expectedTabId: 41 })).ok, true);
+    if (superseding === 'remove-again') assert.equal((await env.send('goshen:remove-cross-site-access')).ok, true);
+    release();
+    assert.equal((await following).ok, false, superseding);
+    await settle();
+    assert.equal(await env.chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }), false, superseding);
+    assert.equal(env.state.sessionData['goshen.cross-site-access-revoked'], true, superseding);
+    assert.notEqual(env.state.sessionData['goshen.tab-intents'][41]?.followCrossSite, true, superseding);
+    if (superseding === 'off') assert.equal(env.state.active, false);
+  }
 });
 
 test('a late grant after verification snapshots cannot survive an in-flight global removal', async () => {

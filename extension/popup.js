@@ -124,7 +124,9 @@
       try { reply = await globalThis.chrome.runtime.sendMessage({ type, ...options, ...(Number.isInteger(page?.tabId) ? { expectedTabId: page.tabId } : {}) }); }
       catch { throw new Error('Could not connect to the terminal. Reload the extension and reopen this panel.'); }
       if (popupClosed) return false;
-      if (!reply?.ok) throw new Error(reply?.error || 'Could not reach the terminal. Reload the extension, then check again.');
+      if (!reply?.ok) throw new Error(reply?.error || (type === 'goshen:remove-cross-site-access'
+        ? 'Chrome did not confirm access removal. Reload Goshen Terminal at chrome://extensions, then reopen this panel and try again.'
+        : 'Could not reach the terminal. Reload the extension, then check again.'));
       if (type === 'goshen:remove-cross-site-access') {
         if (reply.crossSiteAccessRemoved !== true || reply.followPermissionGranted !== false || reply.crossSiteAccessGranted !== false) throw new Error('Could not confirm that cross-site access was removed. Check again.');
         page = { ...page, followCrossSite: false, followPermissionGranted: false, crossSiteAccessGranted: false };
