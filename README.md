@@ -16,7 +16,7 @@ A vintage terminal theme for ChatGPT and the browser tabs you choose, with phosp
 2. Pin **Goshen Terminal** from Chrome's Extensions menu.
 3. Refresh an open ChatGPT tab. On another website, open the extension and choose **TERMINAL ON**.
 
-The Chrome Store currently has **0.3.5**. The **0.3.7** source includes an upcoming privacy update that removes prompt-text inspection and adds **REMOVE CROSS-SITE ACCESS**.
+The Chrome Store currently has **0.3.5**. Version **0.3.7** is awaiting Google's review. It removes prompt-text inspection, adds **REMOVE CROSS-SITE ACCESS**, and fixes re-enabling Follow afterward.
 
 ## Make it yours
 

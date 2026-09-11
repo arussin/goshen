@@ -145,11 +145,17 @@
   },
   "chromeWebStore": {
     "itemId": "jlhlihmmbllkllglociipkhafbpmhcle",
-    "status": "Prepared; awaiting publisher Google sign-in before upload",
-    "uploaded": false,
-    "submitted": false,
+    "status": "Pending review",
+    "uploaded": true,
+    "submitted": true,
     "published": false,
-    "plannedPublication": "Deferred; automatic publication off"
+    "plannedPublication": "Deferred; automatic publication off",
+    "submittedAt": "2026-09-11",
+    "automaticPublication": false,
+    "supersedes": "0.3.6 review canceled and replaced by this submission",
+    "currentlyPublishedVersion": "0.3.5",
+    "listingSourceCommit": "b16111e8425bc9e9fa15d0bbe6224a8c247449a2",
+    "privacyPolicyUrl": "https://github.com/arussin/goshen/blob/b16111e8425bc9e9fa15d0bbe6224a8c247449a2/PRIVACY.md"
   },
   "limitations": "The upload ZIP matches the specified public source. This does not prove safety or establish byte equality with Google's installed package."
 }

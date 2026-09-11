@@ -1,10 +1,10 @@
 # Chrome Web Store release guide
 
-## 0.3.7 access-controls fix — prepared for upload
+## 0.3.7 access-controls fix — pending review
 
 The final package is `Goshen-Terminal-0.3.7.zip` (203004 bytes), with SHA-256 `89fb9dccb5f2abe53f4fdcb54400b5a68bc2ac5998c96707ed483bd5085d8318`. Source: [`b16111e8425bc9e9fa15d0bbe6224a8c247449a2`](https://github.com/arussin/goshen/tree/b16111e8425bc9e9fa15d0bbe6224a8c247449a2). All 18 packaged files match that source. See the [release notes](releases/v0.3.7.md) and [verification record](releases/v0.3.7-verification.json).
 
-Prepared September 11, 2026 after maintainer approval. GitHub source and CI are complete. Chrome Web Store upload is awaiting publisher Google sign-in. Use the existing item, replace the pending 0.3.6 candidate with 0.3.7, and keep automatic publication disabled. The existing 0.3.5 published version is unaffected while review is pending.
+Submitted September 11, 2026 after maintainer approval. The pending 0.3.6 review was canceled and replaced with the verified 0.3.7 ZIP. The store description, immutable source and privacy links, and reviewer instructions were updated. Google confirmed **Pending review**, with automatic publication disabled. The existing **0.3.5** published version remains available while review is pending.
 
 ## Historical 0.3.6 submission
 
